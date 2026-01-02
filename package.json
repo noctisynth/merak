@@ -1,0 +1,51 @@
+{
+  "name": "@merak/merak",
+  "version": "0.1.0-alpha.0",
+  "description": "A productivity tool for project management",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "biome check .",
+    "preview": "vite preview",
+    "prepare": "prek install"
+  },
+  "keywords": [
+    "merak",
+    "project",
+    "productivity"
+  ],
+  "author": {
+    "name": "苏向夜",
+    "email": "fu050409@163.com",
+    "url": "https://github.com/fu050409"
+  },
+  "license": "AGPL-v3.0",
+  "packageManager": "pnpm@10.26.2",
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.10",
+    "@j178/prek": "^0.2.25",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "5.1.2",
+    "tailwindcss": "^4.1.18",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5.9.3",
+    "vite": "npm:rolldown-vite@7.3.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "npm:rolldown-vite@7.3.0"
+    }
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwind-merge": "^3.4.0"
+  }
+}

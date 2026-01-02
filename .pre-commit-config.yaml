@@ -1,0 +1,20 @@
+repos:
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        exclude: pnpm-lock.yaml
+  - repo: local
+    hooks:
+      - id: biome-check
+        name: biome check
+        entry: pnpm biome check --write --no-errors-on-unmatched
+        language: system
+        types: [text]
+        files: "\\.(jsx?|tsx?|c(js|ts)|m(js|ts)|d\\.(ts|cts|mts)|jsonc?|css)$"
+      - id: cargo-format
+        name: cargo format
+        entry: cargo fmt -- --check
+        language: system
+        types: [text]
+        files: "\\.(rs)$"
