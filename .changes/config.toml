@@ -31,10 +31,7 @@ args = ["publish"]
 
 [[resolver.rust.post-version]]
 command = "cargo"
-args = [
-    "generate-lockfile",
-    "--offline",
-]
+args = ["generate-lockfile"]
 dry_run = true
 
 [resolver.nodejs.pre-check]
