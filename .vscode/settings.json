@@ -2,7 +2,6 @@
   "editor.formatOnSave": true,
 
   "editor.codeActionsOnSave": {
-    "source.fixAll": "explicit",
     "source.organizeImports": "explicit"
   },
 
@@ -26,11 +25,5 @@
   },
   "[css]": {
     "editor.defaultFormatter": "biomejs.biome"
-  },
-
-  "search.exclude": {
-    "**/node_modules": true,
-    "**/target": true,
-    "**/dist": true
   }
 }
