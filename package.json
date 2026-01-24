@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "biome check .",
     "preview": "vite preview",
-    "prepare": "prek install"
+    "prepare": "prek install",
+    "openapi-ts": "openapi-ts"
   },
   "keywords": [
     "merak",
@@ -24,6 +25,7 @@
   "packageManager": "pnpm@10.26.2",
   "devDependencies": {
     "@biomejs/biome": "^2.3.10",
+    "@hey-api/openapi-ts": "0.90.9",
     "@j178/prek": "^0.2.25",
     "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^25.0.3",
