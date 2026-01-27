@@ -20,5 +20,5 @@ chrono = { version = "0.4", features = ["serde"] }
 dotenv = "0.15.0"
 rand = "0.9"
 jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
-merak-core = { version = "0.1.0", path = "../core" }
-merak-macros = { version = "0.1.0", path = "../macros" }
+merak-core = { version = "0.1.0-alpha.0", path = "../core" }
+merak-macros = { version = "0.1.0-alpha.0", path = "../macros" }

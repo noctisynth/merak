@@ -1,6 +1,6 @@
 [package]
 name = "merak-macros"
-version = "0.1.0"
+version = "0.1.0-alpha.0"
 edition = "2024"
 
 [lib]
@@ -13,6 +13,6 @@ quote = "1.0.44"
 syn = "2.0.114"
 
 [dev-dependencies]
-merak-core = { version = "0.1.0", path = "../core" }
+merak-core = { version = "0.1.0-alpha.0", path = "../core" }
 serde = { version = "1.0.228", features = ["derive"] }
 surrealdb = "2.5.0"

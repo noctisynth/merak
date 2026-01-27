@@ -2170,7 +2170,7 @@ dependencies = [
 
 [[package]]
 name = "merak-core"
-version = "0.1.0"
+version = "0.1.0-alpha.0"
 dependencies = [
  "merak-macros",
  "serde",
@@ -2179,7 +2179,7 @@ dependencies = [
 
 [[package]]
 name = "merak-macros"
-version = "0.1.0"
+version = "0.1.0-alpha.0"
 dependencies = [
  "darling 0.23.0",
  "heck",
