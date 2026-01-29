@@ -3,7 +3,7 @@ use heck::ToSnakeCase;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
-use syn::{DeriveInput, Ident, parse_macro_input};
+use syn::{parse_macro_input, DeriveInput, Ident};
 
 use crate::attr::{FieldArgs, ModelArgs};
 

@@ -1,7 +1,6 @@
 use serde::Serialize;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
-use surrealdb::method::Query;
 //Rust edtion 2018+ 就已经弃用了extern crate了
 
 pub mod prelude;
@@ -75,18 +74,5 @@ where
 
     pub async fn drop(&self) -> surrealdb::Result<Vec<T>> {
         self.client.delete(T::TABLE_NAME).await
-    }
-
-    pub async fn merge(&self, id: &str, data: D) -> surrealdb::Result<Option<T>> {
-        self.client.update((T::TABLE_NAME, id)).merge(data).await
-    }
-
-    /// let query = obj.query_builder("SELECT * FROM user WHERE id = $id").bind(("id", "user:1"));
-    /// let result = obj.query_raw(query).await?;
-    pub fn query_builder(&self, sql: &str) -> surrealdb::method::Query<'_, Any> {
-        self.client.query(sql)
-    }
-    pub async fn query_raw(&self, query: Query<'_, Any>) -> surrealdb::Result<Vec<T>> {
-        query.await?.take(0)
     }
 }
