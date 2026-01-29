@@ -4,8 +4,7 @@ use std::{env, sync::Arc};
 use axum::http::StatusCode;
 use axum::routing::get;
 use serde::Serialize;
-use surrealdb::Surreal;
-use surrealdb::engine::remote::ws::Ws;
+use surrealdb::engine::any;
 use surrealdb::opt::auth::Root;
 use utoipa::{OpenApi, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -57,7 +56,8 @@ async fn main() -> anyhow::Result<()> {
     // Load .env if present and read SurrealDB connection info
     let _ = dotenv::dotenv();
 
-    let url = env::var("SURREAL_URL").unwrap_or("127.0.0.1:5070".to_string());
+    // url 一定要携带协议名称
+    let url = env::var("SURREAL_URL").unwrap_or("ws://127.0.0.1:5070".to_string());
     let ns = env::var("SURREAL_NS").unwrap_or("test".to_string());
     let db_name = env::var("SURREAL_DB").unwrap_or("test".to_string());
 
@@ -67,8 +67,9 @@ async fn main() -> anyhow::Result<()> {
         password: &env::var("SURREAL_PASS").unwrap_or("root".to_string()),
     };
 
-    // Connect to SurrealDB (ws)
-    let db = Surreal::new::<Ws>(&url).await?;
+    // Connect to SurrealDB (Any)
+    // 我认为作为一个框架，可以封装一下db backend 的连接，这样可以更方便的切换不同的数据库？或是作为一个feature 实现不同的DB-manager-engine?
+    let db = any::connect(&url).await?;
     db.use_ns(&ns).use_db(&db_name).await?;
     db.signin(creds).await?;
     let state = Arc::new(db);
