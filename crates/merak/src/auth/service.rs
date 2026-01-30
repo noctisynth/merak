@@ -90,13 +90,10 @@ impl AuthService {
         let password_hash = self.password_service.hash_password(&password)?;
 
         // Create user
-        let now = Utc::now();
         let user_input = UserInput {
             username,
             email,
             password_hash,
-            created_at: now,
-            updated_at: now,
         };
 
         let created = User::objects(db).create(user_input).await?;

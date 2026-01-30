@@ -6,6 +6,11 @@ pub mod prelude;
 
 pub type SurrealClient = Surreal<Any>;
 
+pub trait IntoRecord: Serialize {
+    type Record: Serialize + 'static;
+    fn into_record(self) -> Self::Record;
+}
+
 pub trait Model
 where
     Self: Serialize + for<'de> serde::Deserialize<'de> + Sized,
@@ -13,7 +18,7 @@ where
     const TABLE_NAME: &'static str;
     #[cfg(feature = "utoipa")]
     type Data: Serialize + 'static;
-    type Input: Serialize + 'static;
+    type Input: IntoRecord + 'static;
     fn table_name(&self) -> &'static str;
     #[cfg(feature = "utoipa")]
     fn into_data(self) -> Self::Data;
@@ -31,7 +36,7 @@ pub struct Objects<'c, T, I> {
 impl<'c, T, I> Objects<'c, T, I>
 where
     T: Model,
-    I: Serialize + 'static,
+    I: IntoRecord + 'static,
 {
     pub fn new(client: &'c SurrealClient) -> Self {
         Objects {
@@ -42,15 +47,25 @@ where
     }
 
     pub async fn create(&self, data: I) -> surrealdb::Result<Option<T>> {
-        self.client.create(T::TABLE_NAME).content(data).await
+        self.client
+            .create(T::TABLE_NAME)
+            .content(data.into_record())
+            .await
     }
 
     pub async fn create_with_id(&self, id: String, data: I) -> surrealdb::Result<Option<T>> {
-        self.client.create((T::TABLE_NAME, id)).content(data).await
+        self.client
+            .create((T::TABLE_NAME, id))
+            .content(data.into_record())
+            .await
     }
 
     pub async fn create_many(&self, data: Vec<I>) -> surrealdb::Result<Option<Vec<T>>> {
-        self.client.create(T::TABLE_NAME).content(data).await
+        let content = data
+            .into_iter()
+            .map(|data| data.into_record())
+            .collect::<Vec<_>>();
+        self.client.create(T::TABLE_NAME).content(content).await
     }
 
     pub async fn get_by_id(&self, id: &str) -> surrealdb::Result<Option<T>> {
@@ -58,11 +73,17 @@ where
     }
 
     pub async fn update(&self, id: &str, data: I) -> surrealdb::Result<Option<T>> {
-        self.client.update((T::TABLE_NAME, id)).content(data).await
+        self.client
+            .update((T::TABLE_NAME, id))
+            .content(data.into_record())
+            .await
     }
 
     pub async fn upsert(&self, id: &str, data: I) -> surrealdb::Result<Option<T>> {
-        self.client.upsert((T::TABLE_NAME, id)).content(data).await
+        self.client
+            .upsert((T::TABLE_NAME, id))
+            .content(data.into_record())
+            .await
     }
 
     pub async fn delete(&self, id: &str) -> surrealdb::Result<Option<T>> {

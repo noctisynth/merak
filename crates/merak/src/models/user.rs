@@ -11,6 +11,8 @@ pub struct User {
     pub username: String,
     pub email: String,
     pub password_hash: String,
+    #[field(created_at)]
     pub created_at: DateTime<Utc>,
+    #[field(updated_at)]
     pub updated_at: DateTime<Utc>,
 }

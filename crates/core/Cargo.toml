@@ -8,6 +8,7 @@ surrealdb = "2.5.0"
 merak-macros = { version = "0.1.0-alpha.0", path = "../macros" }
 serde = { version = "1.0.228", features = ["derive"] }
 utoipa = { version = "5.4.0", optional = true }
+chrono = { version = "0.4.43", features = ["serde"] }
 
 [features]
 default = []

@@ -61,6 +61,7 @@ where
     })
 }
 
+#[cfg(feature = "utoipa")]
 pub(crate) fn expand_data_impl<'a, F>(
     fields: F,
     vis: &Visibility,
@@ -110,4 +111,75 @@ where
 
         #convert_impl
     })
+}
+
+pub(crate) fn expand_record_impl<'a, F>(
+    fields: F,
+    vis: &Visibility,
+    record_ident: &Ident,
+    input_ident: &Ident,
+) -> Result<TokenStream, syn::Error>
+where
+    F: IntoIterator<Item = &'a Field> + Clone,
+{
+    let record_fields = fields
+        .clone()
+        .into_iter()
+        .filter(|field| {
+            let field_args = FieldArgs::from_field(field).unwrap();
+            !field_args.primary
+        })
+        .map(|field| {
+            let field_ident = field.ident.as_ref().unwrap();
+            let field_type = &field.ty;
+            quote! {
+                #field_ident: #field_type
+            }
+        })
+        .collect::<Vec<_>>();
+    let covert_data_fields = fields
+        .into_iter()
+        .filter(|field| {
+            let field_args = FieldArgs::from_field(field).unwrap();
+            !field_args.primary
+        })
+        .map(|field| {
+            let field_args = FieldArgs::from_field(field).unwrap();
+            let field_ident = field.ident.as_ref().unwrap();
+            if field_args.created_at {
+                quote! {
+                    created_at: ::chrono::Utc::now()
+                }
+            } else if field_args.updated_at {
+                quote! {
+                    updated_at: ::chrono::Utc::now()
+                }
+            } else {
+                quote! {
+                    #field_ident: input.#field_ident
+                }
+            }
+        });
+    let quote = quote! {
+        #[derive(::serde::Serialize, ::serde::Deserialize)]
+        #vis struct #record_ident {
+            #(#record_fields),*
+        }
+
+        impl From<#input_ident> for #record_ident {
+            fn from(input: #input_ident) -> Self {
+                #record_ident {
+                    #(#covert_data_fields),*
+                }
+            }
+        }
+
+        impl ::merak_core::IntoRecord for #input_ident {
+            type Record = #record_ident;
+            fn into_record(self) -> Self::Record {
+                self.into()
+            }
+        }
+    };
+    Ok(quote)
 }
