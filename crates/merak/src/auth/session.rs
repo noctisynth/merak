@@ -1,9 +1,10 @@
-use anyhow::{Result, anyhow};
+use anyhow::anyhow;
 use chrono::{Duration, Utc};
 use merak_core::{Model, SurrealClient};
 use surrealdb::RecordId;
 use uuid::Uuid;
 
+use super::error::{AuthError, AuthResult};
 use crate::models::auth::{AuthSession, AuthSessionInput};
 
 #[derive(Debug, Clone)]
@@ -24,7 +25,7 @@ impl SessionService {
         db: &SurrealClient,
         user_id: &RecordId,
         refresh_exp_seconds: i64,
-    ) -> Result<SessionInfo> {
+    ) -> AuthResult<SessionInfo> {
         let now = Utc::now();
         let session_id = Uuid::new_v4().to_string();
         let refresh_jti = Uuid::new_v4().to_string();
@@ -39,7 +40,7 @@ impl SessionService {
         let created = AuthSession::objects(db)
             .create_with_id(session_id.clone(), session_input)
             .await?;
-        created.ok_or_else(|| anyhow!("Failed to create session"))?;
+        created.ok_or_else(|| AuthError::Internal(anyhow!("Failed to create session")))?;
         Ok(SessionInfo {
             session_id,
             refresh_jti,
@@ -50,7 +51,7 @@ impl SessionService {
         &self,
         db: &SurrealClient,
         user_id: &RecordId,
-    ) -> Result<()> {
+    ) -> AuthResult<()> {
         let now = Utc::now();
         db.query("DELETE FROM type::table($table) WHERE user_id = $user_id AND refresh_expires_at < $now")
             .bind(("table", AuthSession::TABLE_NAME))
@@ -64,12 +65,13 @@ impl SessionService {
         &self,
         db: &SurrealClient,
         session_id: &str,
-    ) -> Result<AuthSession> {
+    ) -> AuthResult<AuthSession> {
         let session = AuthSession::get_by_id(db, session_id).await?;
-        let session = session.ok_or_else(|| anyhow!("Session not found"))?;
+        let session =
+            session.ok_or_else(|| AuthError::SessionInvalid("Session not found".to_string()))?;
         if session.refresh_expires_at < Utc::now() {
             let _ = AuthSession::objects(db).delete(session_id).await?;
-            return Err(anyhow!("Session expired"));
+            return Err(AuthError::SessionExpired);
         }
         Ok(session)
     }
@@ -79,7 +81,7 @@ impl SessionService {
         db: &SurrealClient,
         mut session: AuthSession,
         refresh_exp_seconds: i64,
-    ) -> Result<String> {
+    ) -> AuthResult<String> {
         let now = Utc::now();
         let new_refresh_jti = Uuid::new_v4().to_string();
         session.refresh_jti = new_refresh_jti.clone();
@@ -89,7 +91,7 @@ impl SessionService {
         Ok(new_refresh_jti)
     }
 
-    pub async fn delete_session(&self, db: &SurrealClient, session_id: &str) -> Result<()> {
+    pub async fn delete_session(&self, db: &SurrealClient, session_id: &str) -> AuthResult<()> {
         let _ = AuthSession::objects(db).delete(session_id).await?;
         Ok(())
     }

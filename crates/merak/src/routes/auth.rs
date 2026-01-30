@@ -15,6 +15,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use merak_core::SurrealClient;
 
 use crate::auth::{jwt::TokenPair, service::AuthService};
+use crate::common::code;
 use crate::common::response::{ApiResponse, CODE_OK, EmptyData, ErrorResponse};
 
 /// Authentication route state
@@ -40,10 +41,8 @@ impl FromRequestParts<AuthState> for BearerToken {
                 .await
                 .map_err(|e| {
                     (
-                        StatusCode::UNAUTHORIZED,
-                        Json(ErrorResponse {
-                            message: e.to_string(),
-                        }),
+                        StatusCode::OK,
+                        Json(ErrorResponse::new(code::auth::UNAUTHORIZED, e.to_string())),
                     )
                         .into_response()
                 })?;
@@ -168,17 +167,9 @@ pub async fn register(
         )
             .into_response(),
         Err(e) => {
-            let status = if e.to_string().contains("already exists") {
-                StatusCode::CONFLICT
-            } else if e.to_string().contains("Password must be") {
-                StatusCode::BAD_REQUEST
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            };
-            let error_response = ErrorResponse {
-                message: e.to_string(),
-            };
-            (status, Json(error_response)).into_response()
+            let message = e.to_string();
+            let code = e.code();
+            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
         }
     }
 }
@@ -214,12 +205,8 @@ pub async fn login(State(state): State<AuthState>, Json(req): Json<LoginRequest>
             .into_response(),
         Err(e) => {
             let message = e.to_string();
-            let status = if message.contains("Invalid credentials") {
-                StatusCode::UNAUTHORIZED
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            };
-            (status, Json(ErrorResponse { message })).into_response()
+            let code = e.code();
+            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
         }
     }
 }
@@ -255,17 +242,8 @@ pub async fn refresh_token(
             .into_response(),
         Err(e) => {
             let message = e.to_string();
-            let status = if message.contains("Invalid")
-                || message.contains("expired")
-                || message.contains("revoked")
-                || message.contains("Session")
-            {
-                StatusCode::UNAUTHORIZED
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            };
-            let error_response = ErrorResponse { message };
-            (status, Json(error_response)).into_response()
+            let code = e.code();
+            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
         }
     }
 }
@@ -302,15 +280,8 @@ pub async fn logout(State(state): State<AuthState>, BearerToken(bearer): BearerT
             .into_response(),
         Err(e) => {
             let message = e.to_string();
-            let status = if message.contains("Invalid")
-                || message.contains("expired")
-                || message.contains("Session")
-            {
-                StatusCode::UNAUTHORIZED
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            };
-            (status, Json(ErrorResponse { message })).into_response()
+            let code = e.code();
+            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
         }
     }
 }
@@ -342,13 +313,9 @@ pub async fn get_me(State(state): State<AuthState>, BearerToken(bearer): BearerT
     let claims = match auth_service.verify_access_token(&state.db, token).await {
         Ok(claims) => claims,
         Err(e) => {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse {
-                    message: e.to_string(),
-                }),
-            )
-                .into_response();
+            let message = e.to_string();
+            let code = e.code();
+            return (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response();
         }
     };
 
@@ -360,15 +327,9 @@ pub async fn get_me(State(state): State<AuthState>, BearerToken(bearer): BearerT
         )
             .into_response(),
         Err(e) => {
-            let status = if e.to_string().contains("not found") {
-                StatusCode::NOT_FOUND
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            };
-            let error_response = ErrorResponse {
-                message: e.to_string(),
-            };
-            (status, Json(error_response)).into_response()
+            let message = e.to_string();
+            let code = e.code();
+            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
         }
     }
 }

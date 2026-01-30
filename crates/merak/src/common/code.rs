@@ -29,3 +29,40 @@ pub mod module {
 pub const fn make_code(category: i32, module: i32, reason: i32) -> i32 {
     (category * 10000) + (module * 100) + reason
 }
+
+/// Common module error codes
+pub mod common {
+    use super::*;
+
+    /// Resource not found
+    pub const NOT_FOUND: i32 = make_code(category::BUSINESS_ERROR, module::COMMON, 1);
+}
+
+/// Authentication module error codes
+pub mod auth {
+    use super::*;
+
+    /// Invalid credentials (wrong username/email or password)
+    pub const INVALID_CREDENTIALS: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 1);
+
+    /// User already exists (username or email conflict)
+    pub const USER_EXISTS: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 2);
+
+    /// Password does not meet strength requirements
+    pub const WEAK_PASSWORD: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 3);
+
+    /// Token has expired
+    pub const TOKEN_EXPIRED: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 4);
+
+    /// Token is invalid or malformed
+    pub const TOKEN_INVALID: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 5);
+
+    /// Session is invalid or has been revoked
+    pub const SESSION_INVALID: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 6);
+
+    /// User not found
+    pub const USER_NOT_FOUND: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 7);
+
+    /// Unauthorized (missing or invalid authorization header)
+    pub const UNAUTHORIZED: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 8);
+}

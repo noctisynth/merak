@@ -1,9 +1,10 @@
-use anyhow::{Result, anyhow};
+use anyhow::anyhow;
 use chrono::Utc;
 use merak_core::{Model, SurrealClient};
 use surrealdb::RecordId;
 
 use super::{
+    error::{AuthError, AuthResult},
     jwt::{JwtService, TokenPair},
     password::PasswordService,
     session::SessionService,
@@ -61,12 +62,10 @@ impl AuthService {
         username: String,
         email: String,
         password: String,
-    ) -> Result<(User, TokenPair)> {
+    ) -> AuthResult<(User, TokenPair)> {
         // Validate password strength
         if !PasswordService::check_password_strength(&password) {
-            return Err(anyhow!(
-                "Password must be at least 8 characters and contain uppercase, lowercase, and numbers"
-            ));
+            return Err(AuthError::WeakPassword);
         }
 
         // Check if username already exists
@@ -77,7 +76,7 @@ impl AuthService {
             .await?
             .take(0)?;
         if existing_by_username.is_some() {
-            return Err(anyhow!("Username already exists"));
+            return Err(AuthError::UsernameExists);
         }
 
         // Check if email already exists
@@ -88,7 +87,7 @@ impl AuthService {
             .await?
             .take(0)?;
         if existing_by_email.is_some() {
-            return Err(anyhow!("Email already exists"));
+            return Err(AuthError::EmailExists);
         }
 
         // Hash the password
@@ -106,7 +105,7 @@ impl AuthService {
 
         let created = User::objects(db).create(user_input).await?;
 
-        let user = created.ok_or_else(|| anyhow!("Failed to create user"))?;
+        let user = created.ok_or_else(|| AuthError::Internal(anyhow!("Failed to create user")))?;
 
         let session = self
             .session_service
@@ -137,7 +136,7 @@ impl AuthService {
         db: &SurrealClient,
         identifier: String,
         password: String,
-    ) -> Result<(User, TokenPair)> {
+    ) -> AuthResult<(User, TokenPair)> {
         // Find user (by username or email)
         let user: Option<User> = db
             .query("SELECT * FROM type::table($table) WHERE username = $identifier OR email = $identifier")
@@ -146,7 +145,7 @@ impl AuthService {
             .await?
             .take(0)?;
 
-        let user = user.ok_or_else(|| anyhow!("Invalid credentials"))?;
+        let user = user.ok_or(AuthError::InvalidCredentials)?;
 
         // Verify password
         let is_valid = self
@@ -154,7 +153,7 @@ impl AuthService {
             .verify_password(&password, &user.password_hash)?;
 
         if !is_valid {
-            return Err(anyhow!("Invalid credentials"));
+            return Err(AuthError::InvalidCredentials);
         }
 
         self.session_service
@@ -187,22 +186,24 @@ impl AuthService {
         &self,
         db: &SurrealClient,
         refresh_token: String,
-    ) -> Result<TokenPair> {
+    ) -> AuthResult<TokenPair> {
         // Verify refresh token
         let claims = self.jwt_service.verify_refresh_token(&refresh_token)?;
         let refresh_jti = claims
             .jti
             .clone()
-            .ok_or_else(|| anyhow!("Refresh token missing jti"))?;
+            .ok_or_else(|| AuthError::TokenInvalid("Refresh token missing jti".to_string()))?;
         let session = self
             .session_service
             .load_active_session(db, &claims.sid)
             .await?;
         if session.user_id.to_string() != claims.sub {
-            return Err(anyhow!("Session user mismatch"));
+            return Err(AuthError::SessionInvalid(
+                "Session user mismatch".to_string(),
+            ));
         }
         if session.refresh_jti != refresh_jti {
-            return Err(anyhow!("Refresh token revoked"));
+            return Err(AuthError::TokenRevoked);
         }
 
         let new_refresh_jti = self
@@ -233,14 +234,16 @@ impl AuthService {
         &self,
         db: &SurrealClient,
         access_token: &str,
-    ) -> Result<super::jwt::Claims> {
+    ) -> AuthResult<super::jwt::Claims> {
         let claims = self.jwt_service.verify_access_token(access_token)?;
         let session = self
             .session_service
             .load_active_session(db, &claims.sid)
             .await?;
         if session.user_id.to_string() != claims.sub {
-            return Err(anyhow!("Session user mismatch"));
+            return Err(AuthError::SessionInvalid(
+                "Session user mismatch".to_string(),
+            ));
         }
         Ok(claims)
     }
@@ -252,7 +255,11 @@ impl AuthService {
     ///
     /// # Returns
     /// User ID
-    pub async fn extract_user_id(&self, db: &SurrealClient, access_token: &str) -> Result<String> {
+    pub async fn extract_user_id(
+        &self,
+        db: &SurrealClient,
+        access_token: &str,
+    ) -> AuthResult<String> {
         let claims = self.verify_access_token(db, access_token).await?;
         Ok(claims.sub)
     }
@@ -262,7 +269,7 @@ impl AuthService {
     /// # Arguments
     /// - `db`: Database client
     /// - `access_token`: Access token
-    pub async fn logout(&self, db: &SurrealClient, access_token: &str) -> Result<()> {
+    pub async fn logout(&self, db: &SurrealClient, access_token: &str) -> AuthResult<()> {
         let claims = self.verify_access_token(db, access_token).await?;
         self.session_service.delete_session(db, &claims.sid).await
     }
@@ -275,10 +282,12 @@ impl AuthService {
     ///
     /// # Returns
     /// User information
-    pub async fn get_user(&self, db: &SurrealClient, user_id: &str) -> Result<User> {
-        let record_id: RecordId = user_id.parse()?;
+    pub async fn get_user(&self, db: &SurrealClient, user_id: &str) -> AuthResult<User> {
+        let record_id: RecordId = user_id
+            .parse()
+            .map_err(|e| AuthError::Internal(anyhow!("Failed to parse user id: {}", e)))?;
         let user = User::get_by_id(db, &record_id.key().to_string()).await?;
-        user.ok_or_else(|| anyhow!("User not found"))
+        user.ok_or(AuthError::UserNotFound)
     }
 
     /// Update user password
@@ -297,12 +306,10 @@ impl AuthService {
         user_id: &str,
         old_password: String,
         new_password: String,
-    ) -> Result<Option<User>> {
+    ) -> AuthResult<Option<User>> {
         // Validate new password strength
         if !PasswordService::check_password_strength(&new_password) {
-            return Err(anyhow!(
-                "Password must be at least 8 characters and contain uppercase, lowercase, and numbers"
-            ));
+            return Err(AuthError::WeakPassword);
         }
 
         // Get the user
@@ -314,7 +321,7 @@ impl AuthService {
             .verify_password(&old_password, &user.password_hash)?;
 
         if !is_valid {
-            return Err(anyhow!("Invalid old password"));
+            return Err(AuthError::InvalidOldPassword);
         }
 
         // Hash the new password

@@ -1,8 +1,11 @@
-use anyhow::{Result, anyhow};
+use anyhow::anyhow;
 use chrono::{Duration, Utc};
+use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use super::error::{AuthError, AuthResult};
 
 /// JWT configuration
 #[derive(Debug, Clone)]
@@ -108,7 +111,7 @@ impl JwtService {
         username: &str,
         email: &str,
         session_id: &str,
-    ) -> Result<String> {
+    ) -> AuthResult<String> {
         let now = Utc::now();
         let exp = now + Duration::seconds(self.config.access_exp_seconds);
 
@@ -128,7 +131,7 @@ impl JwtService {
             &claims,
             &EncodingKey::from_secret(self.config.access_secret.as_ref()),
         )
-        .map_err(|e| anyhow!("Failed to encode access token: {}", e))
+        .map_err(|e| AuthError::Internal(anyhow!("Failed to encode access token: {}", e)))
     }
 
     /// Generate a refresh token
@@ -139,7 +142,7 @@ impl JwtService {
         email: &str,
         session_id: &str,
         refresh_jti: &str,
-    ) -> Result<String> {
+    ) -> AuthResult<String> {
         let now = Utc::now();
         let exp = now + Duration::seconds(self.config.refresh_exp_seconds);
 
@@ -159,7 +162,7 @@ impl JwtService {
             &claims,
             &EncodingKey::from_secret(self.config.refresh_secret.as_ref()),
         )
-        .map_err(|e| anyhow!("Failed to encode refresh token: {}", e))
+        .map_err(|e| AuthError::Internal(anyhow!("Failed to encode refresh token: {}", e)))
     }
 
     /// Generate a token pair (access token + refresh token)
@@ -170,7 +173,7 @@ impl JwtService {
         email: &str,
         session_id: &str,
         refresh_jti: &str,
-    ) -> Result<TokenPair> {
+    ) -> AuthResult<TokenPair> {
         let access_token = self.generate_access_token(user_id, username, email, session_id)?;
         let refresh_token =
             self.generate_refresh_token(user_id, username, email, session_id, refresh_jti)?;
@@ -184,34 +187,38 @@ impl JwtService {
     }
 
     /// Verify an access token
-    pub fn verify_access_token(&self, token: &str) -> Result<Claims> {
+    pub fn verify_access_token(&self, token: &str) -> AuthResult<Claims> {
         let token_data = decode::<Claims>(
             token,
             &DecodingKey::from_secret(self.config.access_secret.as_ref()),
             &Validation::new(Algorithm::HS256),
         )
-        .map_err(|e| anyhow!("Failed to decode access token: {}", e))?;
+        .map_err(|e| map_decode_error(e, "access"))?;
 
         // Verify token type
         if token_data.claims.token_type != "access" {
-            return Err(anyhow!("Invalid token type, expected 'access'"));
+            return Err(AuthError::TokenInvalid(
+                "Invalid token type, expected 'access'".to_string(),
+            ));
         }
 
         Ok(token_data.claims)
     }
 
     /// Verify a refresh token
-    pub fn verify_refresh_token(&self, token: &str) -> Result<Claims> {
+    pub fn verify_refresh_token(&self, token: &str) -> AuthResult<Claims> {
         let token_data = decode::<Claims>(
             token,
             &DecodingKey::from_secret(self.config.refresh_secret.as_ref()),
             &Validation::new(Algorithm::HS256),
         )
-        .map_err(|e| anyhow!("Failed to decode refresh token: {}", e))?;
+        .map_err(|e| map_decode_error(e, "refresh"))?;
 
         // Verify token type
         if token_data.claims.token_type != "refresh" {
-            return Err(anyhow!("Invalid token type, expected 'refresh'"));
+            return Err(AuthError::TokenInvalid(
+                "Invalid token type, expected 'refresh'".to_string(),
+            ));
         }
 
         Ok(token_data.claims)
@@ -226,9 +233,16 @@ impl JwtService {
     }
 
     /// Extract user ID from a token
-    pub fn extract_user_id(&self, token: &str) -> Result<String> {
+    pub fn extract_user_id(&self, token: &str) -> AuthResult<String> {
         let claims = self.verify_access_token(token)?;
         Ok(claims.sub)
+    }
+}
+
+fn map_decode_error(err: jsonwebtoken::errors::Error, token_type: &str) -> AuthError {
+    match err.kind() {
+        ErrorKind::ExpiredSignature => AuthError::TokenExpired,
+        _ => AuthError::TokenInvalid(format!("Failed to decode {} token: {}", token_type, err)),
     }
 }
 

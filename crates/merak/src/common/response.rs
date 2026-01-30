@@ -9,8 +9,22 @@ pub struct EmptyData {}
 
 #[derive(Debug, Serialize, ToSchema, ToResponse)]
 pub struct ErrorResponse {
+    /// Business error code (CMMRR format).
+    pub code: i32,
     /// Error message.
     pub message: String,
+    /// Server timestamp in milliseconds.
+    pub timestamp: i64,
+}
+
+impl ErrorResponse {
+    pub fn new(code: i32, message: impl Into<String>) -> Self {
+        Self {
+            code,
+            message: message.into(),
+            timestamp: Utc::now().timestamp_millis(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, ToSchema)]
