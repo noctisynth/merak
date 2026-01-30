@@ -15,6 +15,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use merak_core::SurrealClient;
 
 use crate::auth::{jwt::TokenPair, service::AuthService};
+use crate::common::response::{ApiResponse, CODE_OK, EmptyData, ErrorResponse};
 
 /// Authentication route state
 #[derive(Clone)]
@@ -28,7 +29,7 @@ pub struct AuthState {
 pub struct BearerToken(Bearer);
 
 impl FromRequestParts<AuthState> for BearerToken {
-    type Rejection = (StatusCode, String);
+    type Rejection = Response;
 
     async fn from_request_parts(
         parts: &mut axum::http::request::Parts,
@@ -37,7 +38,15 @@ impl FromRequestParts<AuthState> for BearerToken {
         let TypedHeader(Authorization(bearer)) =
             TypedHeader::<Authorization<Bearer>>::from_request_parts(parts, state)
                 .await
-                .map_err(|e| (StatusCode::UNAUTHORIZED, e.to_string()))?;
+                .map_err(|e| {
+                    (
+                        StatusCode::UNAUTHORIZED,
+                        Json(ErrorResponse {
+                            message: e.to_string(),
+                        }),
+                    )
+                        .into_response()
+                })?;
 
         Ok(BearerToken(bearer))
     }
@@ -125,13 +134,6 @@ pub struct RefreshTokenResponse {
     pub tokens: TokenPair,
 }
 
-/// Error response
-#[derive(Debug, Serialize, ToSchema, ToResponse)]
-pub struct ErrorResponse {
-    /// Error message
-    pub message: String,
-}
-
 /// User registration
 ///
 /// Create a new user account and return access tokens
@@ -140,7 +142,7 @@ pub struct ErrorResponse {
     path = "/register",
     request_body = RegisterRequest,
     responses(
-        (status = 201, description = "Registration successful", body = RegisterResponse),
+        (status = 201, description = "Registration successful", body = ApiResponse<RegisterResponse>),
         (status = 400, description = "Invalid request parameters", body = ErrorResponse),
         (status = 409, description = "Username or email already exists", body = ErrorResponse),
         (status = 500, description = "Internal server error", body = ErrorResponse)
@@ -159,10 +161,10 @@ pub async fn register(
     {
         Ok((user, tokens)) => (
             StatusCode::CREATED,
-            Json(RegisterResponse {
+            Json(ApiResponse::ok(RegisterResponse {
                 user: user.into(),
                 tokens,
-            }),
+            })),
         )
             .into_response(),
         Err(e) => {
@@ -189,7 +191,7 @@ pub async fn register(
     path = "/login",
     request_body = LoginRequest,
     responses(
-        (status = 200, description = "Login successful", body = LoginResponse),
+        (status = 200, description = "Login successful", body = ApiResponse<LoginResponse>),
         (status = 401, description = "Invalid username or password", body = ErrorResponse),
         (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
@@ -204,22 +206,20 @@ pub async fn login(State(state): State<AuthState>, Json(req): Json<LoginRequest>
     {
         Ok((user, tokens)) => (
             StatusCode::OK,
-            Json(LoginResponse {
+            Json(ApiResponse::ok(LoginResponse {
                 user: user.into(),
                 tokens,
-            }),
+            })),
         )
             .into_response(),
         Err(e) => {
-            let status = if e.to_string().contains("Invalid credentials") {
+            let message = e.to_string();
+            let status = if message.contains("Invalid credentials") {
                 StatusCode::UNAUTHORIZED
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR
             };
-            let error_response = ErrorResponse {
-                message: e.to_string(),
-            };
-            (status, Json(error_response)).into_response()
+            (status, Json(ErrorResponse { message })).into_response()
         }
     }
 }
@@ -232,7 +232,7 @@ pub async fn login(State(state): State<AuthState>, Json(req): Json<LoginRequest>
     path = "/refresh",
     request_body = RefreshTokenRequest,
     responses(
-        (status = 200, description = "Token refresh successful", body = RefreshTokenResponse),
+        (status = 200, description = "Token refresh successful", body = ApiResponse<RefreshTokenResponse>),
         (status = 401, description = "Refresh token invalid or expired", body = ErrorResponse),
         (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
@@ -245,7 +245,11 @@ pub async fn refresh_token(
     let auth_service = state.auth_service.as_ref();
 
     match auth_service.refresh_token(req.refresh_token) {
-        Ok(tokens) => (StatusCode::OK, Json(RefreshTokenResponse { tokens })).into_response(),
+        Ok(tokens) => (
+            StatusCode::OK,
+            Json(ApiResponse::ok(RefreshTokenResponse { tokens })),
+        )
+            .into_response(),
         Err(e) => {
             let status = if e.to_string().contains("Invalid") || e.to_string().contains("expired") {
                 StatusCode::UNAUTHORIZED
@@ -267,7 +271,7 @@ pub async fn refresh_token(
     post,
     path = "/logout",
     responses(
-        (status = 200, description = "Logout successful", body = ErrorResponse),
+        (status = 200, description = "Logout successful", body = ApiResponse<EmptyData>),
         (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
     tag = "Authentication"
@@ -277,9 +281,11 @@ pub async fn logout() -> impl IntoResponse {
     // The client should delete locally stored tokens
     (
         StatusCode::OK,
-        Json(ErrorResponse {
-            message: "Logged out successfully".to_string(),
-        }),
+        Json(ApiResponse::new(
+            CODE_OK,
+            "Logged out successfully",
+            EmptyData::default(),
+        )),
     )
 }
 
@@ -290,7 +296,7 @@ pub async fn logout() -> impl IntoResponse {
     get,
     path = "/me",
     responses(
-        (status = 200, description = "Successfully retrieved user information", body = UserResponse),
+        (status = 200, description = "Successfully retrieved user information", body = ApiResponse<UserResponse>),
         (status = 401, description = "Unauthorized", body = ErrorResponse),
         (status = 404, description = "User not found", body = ErrorResponse),
         (status = 500, description = "Internal server error", body = ErrorResponse)
@@ -322,7 +328,11 @@ pub async fn get_me(State(state): State<AuthState>, BearerToken(bearer): BearerT
 
     // Get user information
     match auth_service.get_user(&state.db, &user_id).await {
-        Ok(user) => (StatusCode::OK, Json(UserResponse::from(user))).into_response(),
+        Ok(user) => (
+            StatusCode::OK,
+            Json(ApiResponse::ok(UserResponse::from(user))),
+        )
+            .into_response(),
         Err(e) => {
             let status = if e.to_string().contains("not found") {
                 StatusCode::NOT_FOUND
