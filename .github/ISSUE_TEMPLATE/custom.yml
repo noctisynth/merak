@@ -1,0 +1,33 @@
+name: 📌 Custom issue
+description: Documentation, refactor, discussion, or other topics
+title: "[Misc]: "
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for issues that are not bugs or feature requests.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the issue or topic.
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Background or motivation
+      description: Why is this needed?
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected outcome
+      description: What would success look like?
+    validations:
+      required: false

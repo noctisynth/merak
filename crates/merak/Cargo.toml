@@ -8,7 +8,19 @@ publish = false
 anyhow = "1.0.100"
 axum = "0.8.8"
 serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+surrealdb = "2.5.0"
 tokio = { version = "1.49.0", features = ["full"] }
-utoipa = { version = "5.4.0", features = ["axum_extras"] }
+utoipa = { version = "5.4.0", features = ["axum_extras", "chrono"] }
 utoipa-axum = "0.2.0"
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
+argon2 = "0.5"
+uuid = { version = "1.20", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+dotenv = "0.15.0"
+rand = "0.9"
+jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
+merak-core = { version = "0.1.0-alpha.0", path = "../core" }
+merak-macros = { version = "0.1.0-alpha.0", path = "../macros" }
+utoipa-redoc = { version = "6.0.0", features = ["axum"] }
+axum-extra = { version = "0.12.5", features = ["typed-header"] }

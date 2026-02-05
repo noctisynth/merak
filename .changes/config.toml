@@ -9,21 +9,30 @@ fix = "Bug Fixes"
 perf = "Performance Improvements"
 refactor = "Refactors"
 
+[packages."@merak/merak"]
+path = "."
+resolver = "nodejs"
+
 [packages.merak]
 path = "crates/merak"
 resolver = "rust"
 version-mode = { pre-release.tag = "alpha" }
 
-[packages.'@merak/merak']
-path = "."
-resolver = "nodejs"
+[packages.merak-core]
+path = "crates/core"
+resolver = "rust"
+version-mode = { pre-release.tag = "alpha" }
+
+[packages.merak-macros]
+path = "crates/macros"
+resolver = "rust"
 version-mode = { pre-release.tag = "alpha" }
 
 [resolver.rust.pre-check]
 url = "https://crates.io/api/v1/crates/{{ package.name }}/{{ package.version }}"
 
 [resolver.rust.pre-check.extra-headers]
-User-Agent = "Semifold 0.2.9"
+User-Agent = "Semifold 0.2.10"
 
 [[resolver.rust.publish]]
 command = "cargo"

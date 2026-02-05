@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './i18n';
 import './index.css';
+
 import AppRoot from './pages/app/index';
 import Landing from './pages/landing';
 

@@ -3,7 +3,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        exclude: pnpm-lock.yaml
+        exclude: ^(pnpm-lock.yaml|Cargo.lock)$
   - repo: local
     hooks:
       - id: biome-check
@@ -14,7 +14,14 @@ repos:
         files: "\\.(jsx?|tsx?|c(js|ts)|m(js|ts)|d\\.(ts|cts|mts)|jsonc?|css)$"
       - id: cargo-format
         name: cargo format
-        entry: cargo fmt -- --check
+        entry: cargo fmt --
         language: system
         types: [text]
         files: "\\.(rs)$"
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets --all-features -- -D warnings
+        language: system
+        types: [text]
+        files: "\\.(rs)$"
+        pass_filenames: false

@@ -7,3 +7,9 @@ dist/
 
 # Rust
 target/
+
+# Database
+db/
+
+# Environment Variables
+.env

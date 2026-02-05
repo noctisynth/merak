@@ -1,4 +1,4 @@
 {
   "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
-  "ignorePaths": ["pnpm-lock.yaml"]
+  "ignorePaths": ["pnpm-lock.yaml", "Cargo.lock"]
 }
