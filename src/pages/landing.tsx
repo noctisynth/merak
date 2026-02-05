@@ -1,68 +1,118 @@
-// export default function LandingPage(){
-//     return (
-//         <div>
-//            <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-//   <g stroke="#0F172A" stroke-width="6" stroke-linejoin="round" fill="none">
-//     {/*  主星形  */}
-//     <polygon points="64,10 78,50 118,64 78,78 64,118 50,78 10,64 50,50"/>
-    
-//     {/*  中心圆  */}
-//     <circle cx="64" cy="64" r="14"/>
-//   </g>
-//       </svg>
-//         </div>
-//     )
-// }
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import { GithubIcon, MerakIcon, MerakLogo } from '../../public/icon';
+import { useLocale } from '../hooks/useLocale';
 
-import { useNavigate } from 'react-router-dom';
+interface Props
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
+  action?: () => void;
+  children: ReactNode;
+}
 
-export default function LandingPage() {
-  const navigate = useNavigate();
+export const NavActionButton = ({
+  className = '',
+  children,
+  action,
+  ...rest
+}: Props) => {
+  const base =
+    'h-9 min-w-9 px-3 flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:bg-gray-100 active:scale-95';
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-6 text-center">
-      {/* Logo */}
-      <svg
-        width="128"
-        height="128"
-        viewBox="0 0 128 128"
-        xmlns="http://www.w3.org/2000/svg"
-        className="mb-6"
-      >
-        <g stroke="#0F172A" strokeWidth="6" strokeLinejoin="round" fill="none">
-          {/* 主星形 */}
-          <polygon points="64,10 78,50 118,64 78,78 64,118 50,78 10,64 50,50" />
-          {/* 中心圆 */}
-          <circle cx="64" cy="64" r="14" />
-        </g>
-      </svg>
+    <button className={`${base} ${className}`} onClick={action} {...rest}>
+      {children}
+    </button>
+  );
+};
 
-      {/* 标题 */}
-      <h1 className="text-4xl font-bold text-gray-900 mb-4">
-        Welcome to Merak
-      </h1>
+export default function LandingPage() {
+  const { t } = useTranslation('landing');
+  const { lang, label, toggle } = useLocale();
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-white text-gray-900">
+      <header className="fixed top-0 w-full z-50 backdrop-blur-xl bg-white/70 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-linear-to-br from-indigo-600 to-blue-600 shadow-sm">
+              <MerakIcon className="w-5 h-5 text-white" />
+            </div>
 
-      {/* 描述 */}
-      <p className="text-gray-700 mb-8 max-w-md">
-        Merak is an open-source community version of Feishu Project. Explore, collaborate, and get started quickly with our intuitive interface.
-      </p>
+            <span className="font-semibold text-lg tracking-tight">
+              {t('brandName')}
+            </span>
+          </div>
 
-      {/* 按钮 */}
-      <div className="flex gap-4">
-        <button
-          onClick={() => navigate('/app')}
-          className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-        >
-          Enter App
-        </button>
-        <a
-          href="https://www.fumadocs.dev/"
-          target="_blank"
-          className="px-6 py-3 border border-gray-300 rounded-md hover:bg-gray-100 transition"
-        >
-          Docs
-        </a>
-      </div>
+          {/* Decorative background glow */}
+          <div className="absolute inset-0 -z-10 bg-linear-to-br from-indigo-50 via-white to-blue-50" />
+          <div className="absolute -top-40 -right-40 w-[520px] h-[520px] bg-indigo-500/30 rounded-full blur-[120px] -z-10" />
+          <div className="absolute bottom-0 -left-40 w-[520px] h-[520px] bg-blue-500/30 rounded-full blur-[120px] -z-10" />
+
+          <div className="flex items-center gap-3">
+            <NavActionButton
+              aria-label="Toggle theme"
+              className="cursor-pointer"
+            >
+              🌙
+            </NavActionButton>
+
+            <NavActionButton
+              action={toggle}
+              aria-label={
+                lang === 'en' ? 'Switch to 中文' : 'Switch to English'
+              }
+              className="text-xs font-medium w-auto px-3 cursor-pointer"
+            >
+              {label}
+            </NavActionButton>
+
+            <NavActionButton
+              aria-label="GitHub repository"
+              action={() =>
+                window.open('https://github.com/noctisynth/merak', '_blank')
+              }
+              className="cursor-pointer"
+            >
+              <GithubIcon className="w-5 h-5" />
+            </NavActionButton>
+          </div>
+        </div>
+      </header>
+
+      <section className="flex flex-col items-center justify-center text-center px-6 pt-32 pb-24">
+        <div className="mb-8">
+          <MerakLogo />
+        </div>
+
+        <h1 className="text-5xl md:text-6xl font-bold leading-tight max-w-4xl">
+          {t('titlePrefix')}
+          <span className="bg-linear-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
+            {' '}
+            {t('titleHighlight')}
+          </span>{' '}
+          {t('titleSuffix')}
+        </h1>
+
+        <p className="mt-6 text-lg text-gray-600 max-w-2xl">{t('desc')}</p>
+
+        <div className="flex gap-4 mt-10">
+          <Link
+            to="/app"
+            className="px-8 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
+          >
+            {t('enter')} →
+          </Link>
+
+          <a
+            href="https://www.fumadocs.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-8 py-3 rounded-lg border border-gray-300 hover:bg-gray-100 transition"
+          >
+            {t('docs')}
+          </a>
+        </div>
+      </section>
     </div>
   );
 }
