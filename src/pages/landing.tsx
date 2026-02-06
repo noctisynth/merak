@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { GithubIcon, MerakIcon, MerakLogo } from '../../public/icon';
 import { useLocale } from '../hooks/useLocale';
 
