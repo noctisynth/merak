@@ -4,9 +4,9 @@ import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import './index.css';
 
-import Home from '@/pages/auth/home';
-import Login from '@/pages/auth/login';
-import Register from '@/pages/auth/register';
+import Home from './pages/auth/home';
+import Login from './pages/auth/login';
+import Register from './pages/auth/register';
 
 export const router = createBrowserRouter([
   {
