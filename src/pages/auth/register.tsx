@@ -1,6 +1,6 @@
-import { register } from '@/services/auth';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { register } from '@/services/auth';
 
 export default function Register() {
   const navigate = useNavigate();
