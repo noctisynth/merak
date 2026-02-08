@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { login } from '@/services/auth';
 
 export default function Login() {
+  const navigate = useNavigate();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -11,54 +13,89 @@ export default function Login() {
     try {
       setLoading(true);
       setError('');
-      const data = await login({
+      await login({
         identifier,
         password,
       });
 
-      console.log('login success:', data);
-    } catch (err) {
-      console.error(err);
-      alert('Login fail');
-      setError('Login fail');
+      navigate('/register');
+    } catch {
+      setError('Invalid email or password');
     } finally {
       setLoading(false);
     }
   }
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm">
-        <h1 className="mb-4 text-xl font-semibold text-foreground">Login</h1>
+      <div className="w-full max-w-md rounded-xl border bg-card shadow-sm">
+        <div className="flex items-center justify-between p-6 pb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">
+              Login to your account
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Enter your email below to login to your account
+            </p>
+          </div>
 
-        <input
-          className="mb-2 w-full rounded-md border bg-background p-2 text-foreground"
-          placeholder="Username or Email"
-          value={identifier}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setIdentifier(e.target.value)
-          }
-        />
+          <Link
+            to="/register"
+            className="text-sm font-medium text-foreground hover:underline"
+          >
+            Sign Up
+          </Link>
+        </div>
 
-        <input
-          className="mb-2 w-full rounded-md border bg-background p-2 text-foreground"
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value)
-          }
-        />
+        <div className="px-6 pb-6 space-y-4">
+          <div className="space-y-2">
+            <label
+              htmlFor="login-email"
+              className="text-sm font-medium text-foreground"
+            >
+              Email
+            </label>
+            <input
+              id="login-email"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+              placeholder="m@example.com"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+            />
+          </div>
 
-        {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="login-password"
+                className="text-sm font-medium text-foreground"
+              >
+                Password
+              </label>
+              <span className="text-sm text-muted-foreground cursor-pointer">
+                Forgot your password?
+              </span>
+            </div>
+            <input
+              id="login-password"
+              type="password"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
-        <button
-          type="button"
-          className="w-full rounded-md border px-4 py-2 text-sm text-foreground hover:bg-muted disabled:opacity-50"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:opacity-50"
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,29 +1,30 @@
 import { useState } from 'react';
-import { register } from '../../services/auth';
+import { Link, useNavigate } from 'react-router';
+import { register } from '@/services/auth';
 
 export default function Register() {
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function handleSubmit() {
-    setLoading(true);
-    setError('');
-
     try {
-      const data = await register({
+      setLoading(true);
+      setError('');
+
+      await register({
         username,
         email,
         password,
       });
 
-      console.log('register success:', data);
-    } catch (err) {
-      console.error(err);
-      setError('注册失败');
+      navigate('/');
+    } catch {
+      setError('Sign-up failed');
     } finally {
       setLoading(false);
     }
@@ -31,47 +32,83 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm">
-        <h1 className="mb-4 text-xl font-semibold text-foreground">Register</h1>
+      <div className="w-full max-w-md rounded-xl border bg-card shadow-sm">
+        <div className="flex items-center justify-between p-6 pb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">
+              Create an account
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Enter your information to create an account
+            </p>
+          </div>
 
-        <input
-          className="mb-2 w-full rounded-md border bg-background p-2 text-foreground"
-          placeholder="Username"
-          value={username}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setUsername(e.target.value)
-          }
-        />
+          <Link
+            to="/"
+            className="text-sm font-medium text-foreground hover:underline"
+          >
+            Log in
+          </Link>
+        </div>
 
-        <input
-          className="mb-2 w-full rounded-md border bg-background p-2 text-foreground"
-          placeholder="Email"
-          value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setEmail(e.target.value)
-          }
-        />
+        <div className="px-6 pb-6 space-y-4">
+          <div className="space-y-2">
+            <label
+              htmlFor="register-username"
+              className="text-sm font-medium text-foreground"
+            >
+              Username
+            </label>
+            <input
+              id="register-username"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+          </div>
 
-        <input
-          className="mb-2 w-full rounded-md border bg-background p-2 text-foreground"
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setPassword(e.target.value)
-          }
-        />
+          <div className="space-y-2">
+            <label
+              htmlFor="email"
+              className="text-sm font-medium text-foreground"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
 
-        {error && <p className="mb-2 text-sm text-destructive">{error}</p>}
+          <div className="space-y-2">
+            <label
+              htmlFor="register-password"
+              className="text-sm font-medium text-foreground"
+            >
+              Password
+            </label>
+            <input
+              id="register-password"
+              type="password"
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
-        <button
-          type="button"
-          className="w-full rounded-md border px-4 py-2 text-sm text-foreground hover:bg-muted"
-          onClick={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? 'Registering...' : 'Register'}
-        </button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:opacity-50"
+          >
+            {loading ? 'Registering...' : 'Register'}
+          </button>
+        </div>
       </div>
     </div>
   );
