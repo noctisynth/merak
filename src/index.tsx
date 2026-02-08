@@ -1,16 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import './i18n';
 import './index.css';
+import Landing from './pages';
 
-import { createBrowserRouter } from 'react-router';
-import { RouterProvider } from 'react-router/dom';
-
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <div>Hello World</div>,
-  },
-]);
+const router = createBrowserRouter([{ path: '/', element: <Landing /> }]);
 
 const root = document.getElementById('root') as HTMLDivElement;
 
