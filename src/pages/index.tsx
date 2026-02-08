@@ -1,30 +1,22 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { GithubIcon, MerakIcon, MerakLogo } from '../../public/icon';
 import { useLocale } from '../hooks/useLocale';
 
-interface Props
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
-  action?: () => void;
-  children: ReactNode;
-}
+interface NavActionButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
-export const NavActionButton = ({
-  className = '',
-  children,
-  action,
-  ...rest
-}: Props) => {
-  const base =
-    'h-9 min-w-9 px-3 flex items-center justify-center rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:bg-gray-100 active:scale-95';
-
+export function NavActionButton({ className, ...props }: NavActionButtonProps) {
   return (
-    <button className={`${base} ${className}`} onClick={action} {...rest}>
-      {children}
-    </button>
+    <Button
+      variant="ghost"
+      className={cn('rounded-lg h-9 w-9 cursor-pointer', className)}
+      {...props}
+    />
   );
-};
+}
 
 export default function LandingPage() {
   const { t } = useTranslation('landing');
@@ -49,29 +41,22 @@ export default function LandingPage() {
           <div className="absolute bottom-0 -left-40 w-[520px] h-[520px] bg-blue-500/30 rounded-full blur-[120px] -z-10" />
 
           <div className="flex items-center gap-3">
-            <NavActionButton
-              aria-label="Toggle theme"
-              className="cursor-pointer"
-            >
-              🌙
-            </NavActionButton>
+            <NavActionButton aria-label="Toggle theme">🌙</NavActionButton>
 
             <NavActionButton
-              action={toggle}
+              onClick={toggle}
               aria-label={
                 lang === 'en' ? 'Switch to 中文' : 'Switch to English'
               }
-              className="text-xs font-medium w-auto px-3 cursor-pointer"
             >
               {label}
             </NavActionButton>
 
             <NavActionButton
               aria-label="GitHub repository"
-              action={() =>
+              onClick={() =>
                 window.open('https://github.com/noctisynth/merak', '_blank')
               }
-              className="cursor-pointer"
             >
               <GithubIcon className="w-5 h-5" />
             </NavActionButton>
