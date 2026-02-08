@@ -1,14 +1,25 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';
-
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
+import './index.css';
 
-const router = createBrowserRouter([
+import Home from './pages/auth/home';
+import Login from './pages/auth/login';
+import Register from './pages/auth/register';
+
+export const router = createBrowserRouter([
   {
     path: '/',
-    element: <div>Hello World</div>,
+    element: <Login />,
+  },
+  {
+    path: '/home',
+    element: <Home />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
   },
 ]);
 
