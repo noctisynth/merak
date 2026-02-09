@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { login } from '@/services/auth';
+import { login } from '@/client';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,8 +15,10 @@ export default function Login() {
       setError('');
 
       await login({
-        identifier,
-        password,
+        body: {
+          identifier,
+          password,
+        },
       });
 
       navigate('/register');

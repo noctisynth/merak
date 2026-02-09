@@ -4,8 +4,8 @@ import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import './index.css';
 
-import Login from './pages/auth/login';
-import Register from './pages/auth/register';
+import Login from './pages/login';
+import Register from './pages/register';
 
 function Home() {
   return (
@@ -18,7 +18,7 @@ function Home() {
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/login',
     element: <Login />,
   },
   {

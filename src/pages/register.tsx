@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { register } from '@/services/auth';
+import { register } from '@/client';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -17,12 +17,14 @@ export default function Register() {
       setError('');
 
       await register({
-        username,
-        email,
-        password,
+        body: {
+          username,
+          email,
+          password,
+        },
       });
 
-      navigate('/');
+      navigate('/login');
     } catch {
       setError('Sign-up failed');
     } finally {

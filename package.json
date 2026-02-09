@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "biome check .",
     "preview": "vite preview",
-    "generate-client": "openapi-ts --input http://localhost:8000/apidoc/openapi.json --output ./src/client --client @hey-api/client-axios",
+    "generate-client": "openapi-ts --input http://localhost:8080/apidoc/openapi.json --output ./src/client --client @hey-api/client-axios",
     "prepare": "prek install"
   },
   "keywords": [
@@ -43,6 +43,7 @@
     }
   },
   "dependencies": {
+    "@merak/merak": "link:",
     "axios": "^1.13.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
