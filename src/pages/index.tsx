@@ -3,8 +3,8 @@ import { Link } from 'react-router';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { GithubIcon, MerakIcon, MerakLogo } from '../../public/icon';
 import { useLocale } from '../hooks/useLocale';
+import { GithubIcon, MerakIcon, MerakLogo } from '../icon/icon';
 
 interface NavActionButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
