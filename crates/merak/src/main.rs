@@ -10,10 +10,10 @@ use utoipa::{OpenApi, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_redoc::{Redoc, Servable};
 
-use merak::auth::service::AuthService;
 use merak::common::code;
 use merak::common::response::{ApiResponse, ErrorResponse};
 use merak::routes::auth;
+use merak::services::auth::AuthService;
 
 #[derive(ToSchema, Serialize)]
 struct HelloResponse {

@@ -14,9 +14,9 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use merak_core::SurrealClient;
 
-use crate::auth::{jwt::TokenPair, service::AuthService};
 use crate::common::code;
 use crate::common::response::{ApiResponse, CODE_OK, EmptyData, ErrorResponse};
+use crate::services::{auth::AuthService, jwt::TokenPair};
 
 /// Authentication route state
 #[derive(Clone)]
