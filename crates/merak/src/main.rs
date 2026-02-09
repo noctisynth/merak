@@ -11,6 +11,8 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_redoc::{Redoc, Servable};
 
 use merak::auth::service::AuthService;
+use merak::common::code;
+use merak::common::response::{ApiResponse, ErrorResponse};
 use merak::routes::auth;
 
 #[derive(ToSchema, Serialize)]
@@ -19,20 +21,18 @@ struct HelloResponse {
 }
 
 #[utoipa::path(method(get, head), path = "/hello", operation_id = "hello", responses(
-    (status = 200, description = "Successful response", body = HelloResponse),
+    (status = 200, description = "Successful response", body = ApiResponse<HelloResponse>),
 ))]
-async fn hello() -> axum::Json<HelloResponse> {
-    axum::Json(HelloResponse {
+async fn hello() -> axum::Json<ApiResponse<HelloResponse>> {
+    axum::Json(ApiResponse::ok(HelloResponse {
         message: "Hello, World!".to_string(),
-    })
+    }))
 }
 
-async fn not_found() -> (StatusCode, axum::Json<HelloResponse>) {
+async fn not_found() -> (StatusCode, axum::Json<ErrorResponse>) {
     (
-        StatusCode::NOT_FOUND,
-        axum::Json(HelloResponse {
-            message: "Not Found".to_string(),
-        }),
+        StatusCode::OK,
+        axum::Json(ErrorResponse::new(code::common::NOT_FOUND, "Not Found")),
     )
 }
 
