@@ -31,7 +31,7 @@ export const MerakLogo = () => (
     aria-label="Merak logo"
   >
     <g
-      stroke="#111827"
+      stroke="currentColor"
       strokeWidth="5"
       strokeLinejoin="round"
       strokeLinecap="butt"
