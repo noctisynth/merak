@@ -4,11 +4,19 @@ import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import './index.css';
 
-import Home from './pages/auth/home';
 import Login from './pages/auth/login';
 import Register from './pages/auth/register';
 
-export const router = createBrowserRouter([
+function Home() {
+  return (
+    <div className="min-h-screen bg-background p-6 text-foreground">
+      <h1 className="text-2xl font-semibold">Home</h1>
+      <p className="mt-2 text-muted-foreground">You are logged in.</p>
+    </div>
+  );
+}
+
+const router = createBrowserRouter([
   {
     path: '/',
     element: <Login />,

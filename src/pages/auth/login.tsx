@@ -9,10 +9,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function handleSubmit() {
+  const handleSubmit = async () => {
     try {
       setLoading(true);
       setError('');
+
       await login({
         identifier,
         password,
@@ -24,7 +25,7 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
-  }
+  };
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md rounded-xl border bg-card shadow-sm">
