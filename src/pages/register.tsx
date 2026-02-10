@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { register } from '@/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -55,13 +58,13 @@ export default function Register() {
 
         <div className="px-6 pb-6 space-y-4">
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="register-username"
               className="text-sm font-medium text-foreground"
             >
               Username
-            </label>
-            <input
+            </Label>
+            <Input
               id="register-username"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
               value={username}
@@ -70,13 +73,13 @@ export default function Register() {
           </div>
 
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="email"
               className="text-sm font-medium text-foreground"
             >
               Email
-            </label>
-            <input
+            </Label>
+            <Input
               id="email"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
               value={email}
@@ -85,13 +88,13 @@ export default function Register() {
           </div>
 
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="register-password"
               className="text-sm font-medium text-foreground"
             >
               Password
-            </label>
-            <input
+            </Label>
+            <Input
               id="register-password"
               type="password"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
@@ -102,14 +105,14 @@ export default function Register() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <button
+          <Button
             type="button"
             onClick={handleSubmit}
             disabled={loading}
             className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:opacity-50"
           >
             {loading ? 'Registering...' : 'Register'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

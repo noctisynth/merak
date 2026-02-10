@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { login } from '@/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -51,13 +54,13 @@ export default function Login() {
 
         <div className="px-6 pb-6 space-y-4">
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="login-email"
               className="text-sm font-medium text-foreground"
             >
               Email
-            </label>
-            <input
+            </Label>
+            <Input
               id="login-email"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
               placeholder="m@example.com"
@@ -68,17 +71,17 @@ export default function Login() {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label
+              <Label
                 htmlFor="login-password"
                 className="text-sm font-medium text-foreground"
               >
                 Password
-              </label>
+              </Label>
               <span className="text-sm text-muted-foreground cursor-pointer">
                 Forgot your password?
               </span>
             </div>
-            <input
+            <Input
               id="login-password"
               type="password"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
@@ -90,14 +93,14 @@ export default function Login() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <button
+          <Button
             type="button"
             onClick={handleSubmit}
             disabled={loading}
             className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:opacity-50"
           >
             {loading ? 'Logging in...' : 'Login'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
