@@ -97,7 +97,7 @@ export default function Login() {
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-foreground/90 disabled:opacity-50"
+            className="w-full"
           >
             {loading ? 'Logging in...' : 'Login'}
           </Button>
