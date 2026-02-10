@@ -87,7 +87,7 @@ export default function LandingPage() {
 
         <div className="flex gap-4 mt-10">
           <Link
-            to="/app"
+            to="/login"
             className="px-8 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition"
           >
             {t('enter')} →
