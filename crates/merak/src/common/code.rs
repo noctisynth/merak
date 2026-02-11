@@ -65,7 +65,7 @@ macro_rules! define_codes {
                             utoipa::openapi::KnownFormat::Int32,
                         )))
                         .enum_values(Some([$crate::common::code::make_code($cat, $mod_, $reason).0]))
-                        .description(Some(concat!($($desc),*)))
+                        .description(Some(concat!($($desc),*).trim()))
                         .into(),
                 )*]
             }

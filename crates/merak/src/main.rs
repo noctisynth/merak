@@ -10,6 +10,7 @@ use utoipa::{OpenApi, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_redoc::{Redoc, Servable};
 
+use merak::BusinessCodes;
 use merak::auth::service::AuthService;
 use merak::common::code::CommonCode;
 use merak::common::response::{ApiResponse, ErrorResponse};
@@ -39,6 +40,7 @@ async fn not_found() -> (StatusCode, axum::Json<ErrorResponse>) {
 #[derive(OpenApi)]
 #[openapi(
     paths(hello),
+    components(schemas(BusinessCodes)),
     tags(
         (name = "Authentication", description = "Authentication endpoints"),
     ),
