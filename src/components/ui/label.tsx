@@ -8,7 +8,7 @@ function Label({
   ...props
 }: React.ComponentProps<'label'>) {
   return (
-    // biome-ignore lint/a11y/noLabelWithoutControl: This is a wrapper component. Text content comes from children passed via props.
+    // biome-ignore lint/a11y/noLabelWithoutControl: This is a wrapper component. Consumers must provide text children to establish the accessible name.
     <label
       data-slot="label"
       className={cn(
