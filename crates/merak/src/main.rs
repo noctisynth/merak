@@ -11,7 +11,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_redoc::{Redoc, Servable};
 
 use merak::auth::service::AuthService;
-use merak::common::code;
+use merak::common::code::CommonCode;
 use merak::common::response::{ApiResponse, ErrorResponse};
 use merak::routes::auth;
 
@@ -31,8 +31,8 @@ async fn hello() -> axum::Json<ApiResponse<HelloResponse>> {
 
 async fn not_found() -> (StatusCode, axum::Json<ErrorResponse>) {
     (
-        StatusCode::OK,
-        axum::Json(ErrorResponse::new(code::common::NOT_FOUND, "Not Found")),
+        StatusCode::NOT_FOUND,
+        axum::Json(ErrorResponse::new(CommonCode::NotFound, "Not Found")),
     )
 }
 

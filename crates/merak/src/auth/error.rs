@@ -1,8 +1,10 @@
 use std::{error::Error as StdError, fmt};
 
 use anyhow::Error as AnyError;
+use axum::http::StatusCode;
 
-use crate::common::code;
+use crate::auth::code::AuthCode;
+use crate::common::code::{BusinessCode, Category, Module, make_code};
 
 #[derive(Debug)]
 pub enum AuthError {
@@ -23,20 +25,33 @@ pub enum AuthError {
 pub type AuthResult<T> = std::result::Result<T, AuthError>;
 
 impl AuthError {
-    pub fn code(&self) -> i32 {
+    pub fn code(&self) -> BusinessCode {
         match self {
-            AuthError::WeakPassword => code::auth::WEAK_PASSWORD,
-            AuthError::UsernameExists | AuthError::EmailExists => code::auth::USER_EXISTS,
+            AuthError::WeakPassword => AuthCode::WeakPassword.into(),
+            AuthError::UsernameExists | AuthError::EmailExists => AuthCode::UserExists.into(),
             AuthError::InvalidCredentials | AuthError::InvalidOldPassword => {
-                code::auth::INVALID_CREDENTIALS
+                AuthCode::InvalidCredentials.into()
             }
-            AuthError::TokenExpired | AuthError::SessionExpired => code::auth::TOKEN_EXPIRED,
-            AuthError::TokenInvalid(_) | AuthError::TokenRevoked => code::auth::TOKEN_INVALID,
-            AuthError::SessionInvalid(_) => code::auth::SESSION_INVALID,
-            AuthError::UserNotFound => code::auth::USER_NOT_FOUND,
-            AuthError::Internal(_) => {
-                code::make_code(code::category::UNKNOWN_ERROR, code::module::AUTH, 99)
+            AuthError::TokenExpired | AuthError::SessionExpired => AuthCode::TokenExpired.into(),
+            AuthError::TokenInvalid(_) | AuthError::TokenRevoked => AuthCode::TokenInvalid.into(),
+            AuthError::SessionInvalid(_) => AuthCode::SessionInvalid.into(),
+            AuthError::UserNotFound => AuthCode::UserNotFound.into(),
+            AuthError::Internal(_) => make_code(Category::UnknownError, Module::Auth, 99),
+        }
+    }
+
+    pub fn status_code(&self) -> StatusCode {
+        match self {
+            AuthError::WeakPassword => StatusCode::BAD_REQUEST,
+            AuthError::UsernameExists | AuthError::EmailExists => StatusCode::CONFLICT,
+            AuthError::InvalidCredentials | AuthError::InvalidOldPassword => {
+                StatusCode::UNAUTHORIZED
             }
+            AuthError::TokenExpired | AuthError::SessionExpired => StatusCode::UNAUTHORIZED,
+            AuthError::TokenInvalid(_) | AuthError::TokenRevoked => StatusCode::UNAUTHORIZED,
+            AuthError::SessionInvalid(_) => StatusCode::UNAUTHORIZED,
+            AuthError::UserNotFound => StatusCode::NOT_FOUND,
+            AuthError::Internal(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

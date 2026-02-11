@@ -1,68 +1,137 @@
-pub const CODE_OK: i32 = 0;
+use utoipa::openapi::{KnownFormat, ObjectBuilder, RefOr, Schema, SchemaFormat, schema::Type};
 
-pub mod category {
-    pub const SUCCESS: i32 = 0;
-    pub const BUSINESS_ERROR: i32 = 1;
-    pub const PROCESSING: i32 = 2;
-    pub const PARTIAL_SUCCESS: i32 = 3;
-    pub const UNKNOWN_ERROR: i32 = 9;
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, utoipa::ToSchema)]
+#[serde(transparent)]
+pub struct BusinessCode(pub i32);
+
+pub const CODE_OK: BusinessCode = BusinessCode(0);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(i32)]
+pub enum Category {
+    Success = 0,
+    BusinessError = 1,
+    Processing = 2,
+    PartialSuccess = 3,
+    UnknownError = 9,
 }
 
-pub mod module {
-    pub const AUTH: i32 = 1;
-    pub const USER: i32 = 2;
-    pub const ORG: i32 = 3;
-    pub const PROJECT: i32 = 4;
-    pub const SPACE: i32 = 5;
-    pub const WORKFLOW: i32 = 6;
-    pub const NODE: i32 = 7;
-    pub const SUBTASK: i32 = 8;
-    pub const LINK: i32 = 9;
-    pub const DOC: i32 = 10;
-    pub const COMMENT: i32 = 11;
-    pub const NOTIFICATION: i32 = 12;
-    pub const COMMON: i32 = 99;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(i32)]
+pub enum Module {
+    Auth = 1,
+    User = 2,
+    Org = 3,
+    Project = 4,
+    Space = 5,
+    Workflow = 6,
+    Node = 7,
+    Subtask = 8,
+    Link = 9,
+    Doc = 10,
+    Comment = 11,
+    Notification = 12,
+    Common = 99,
 }
 
 /// Build a business code using the CMMRR scheme.
 /// C: category, MM: module, RR: reason.
-pub const fn make_code(category: i32, module: i32, reason: i32) -> i32 {
-    (category * 10000) + (module * 100) + reason
+pub const fn make_code(category: Category, module: Module, reason: i32) -> BusinessCode {
+    BusinessCode((category as i32 * 10000) + (module as i32 * 100) + reason)
 }
 
-/// Common module error codes
-pub mod common {
-    use super::*;
+macro_rules! define_codes {
+    ($enum_name:ident, $cat:expr, $mod_:expr, {
+        $($(#[doc = $desc:literal])* $variant:ident = $reason:expr),* $(,)?
+    }) => {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        #[repr(i32)]
+        pub enum $enum_name {
+            $($variant = $crate::common::code::make_code($cat, $mod_, $reason).0),*
+        }
 
+        impl From<$enum_name> for $crate::common::code::BusinessCode {
+            fn from(v: $enum_name) -> Self {
+                $crate::common::code::BusinessCode(v as i32)
+            }
+        }
+
+        impl $enum_name {
+            pub fn schema_items() -> Vec<utoipa::openapi::RefOr<utoipa::openapi::Schema>> {
+                vec![$(
+                    utoipa::openapi::ObjectBuilder::new()
+                        .schema_type(utoipa::openapi::schema::Type::Integer)
+                        .format(Some(utoipa::openapi::SchemaFormat::KnownFormat(
+                            utoipa::openapi::KnownFormat::Int32,
+                        )))
+                        .enum_values(Some([$crate::common::code::make_code($cat, $mod_, $reason).0]))
+                        .description(Some(concat!($($desc),*)))
+                        .into(),
+                )*]
+            }
+        }
+
+        impl utoipa::PartialSchema for $enum_name {
+            fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::Schema> {
+                Self::schema_items().into_iter()
+                    .fold(utoipa::openapi::OneOfBuilder::new(), |b, s| b.item(s))
+                    .into()
+            }
+        }
+
+        impl utoipa::ToSchema for $enum_name {
+            fn name() -> std::borrow::Cow<'static, str> {
+                std::borrow::Cow::Borrowed(stringify!($enum_name))
+            }
+        }
+    };
+}
+
+define_codes!(CommonCode, Category::BusinessError, Module::Common, {
     /// Resource not found
-    pub const NOT_FOUND: i32 = make_code(category::BUSINESS_ERROR, module::COMMON, 1);
+    NotFound = 1,
+});
+
+pub struct SuccessCode;
+
+impl utoipa::PartialSchema for SuccessCode {
+    fn schema() -> RefOr<Schema> {
+        ObjectBuilder::new()
+            .schema_type(Type::Integer)
+            .format(Some(SchemaFormat::KnownFormat(KnownFormat::Int32)))
+            .enum_values(Some([0]))
+            .description(Some("Success"))
+            .into()
+    }
 }
 
-/// Authentication module error codes
-pub mod auth {
-    use super::*;
-
-    /// Invalid credentials (wrong username/email or password)
-    pub const INVALID_CREDENTIALS: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 1);
-
-    /// User already exists (username or email conflict)
-    pub const USER_EXISTS: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 2);
-
-    /// Password does not meet strength requirements
-    pub const WEAK_PASSWORD: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 3);
-
-    /// Token has expired
-    pub const TOKEN_EXPIRED: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 4);
-
-    /// Token is invalid or malformed
-    pub const TOKEN_INVALID: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 5);
-
-    /// Session is invalid or has been revoked
-    pub const SESSION_INVALID: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 6);
-
-    /// User not found
-    pub const USER_NOT_FOUND: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 7);
-
-    /// Unauthorized (missing or invalid authorization header)
-    pub const UNAUTHORIZED: i32 = make_code(category::BUSINESS_ERROR, module::AUTH, 8);
+impl utoipa::ToSchema for SuccessCode {
+    fn name() -> std::borrow::Cow<'static, str> {
+        std::borrow::Cow::Borrowed("SuccessCode")
+    }
 }
+
+macro_rules! combine_codes {
+    ($name:ident, [$($code_type:ty),+ $(,)?]) => {
+        pub struct $name;
+
+        impl utoipa::PartialSchema for $name {
+            fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::Schema> {
+                let mut items = Vec::new();
+                $(items.extend(<$code_type>::schema_items());)+
+                items.into_iter()
+                    .fold(utoipa::openapi::OneOfBuilder::new(), |b, s| b.item(s))
+                    .into()
+            }
+        }
+
+        impl utoipa::ToSchema for $name {
+            fn name() -> std::borrow::Cow<'static, str> {
+                std::borrow::Cow::Borrowed(stringify!($name))
+            }
+        }
+    };
+}
+
+pub(crate) use combine_codes;
+pub(crate) use define_codes;
