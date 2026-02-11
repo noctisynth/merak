@@ -8,6 +8,7 @@ function Label({
   ...props
 }: React.ComponentProps<'label'>) {
   return (
+    // biome-ignore lint/a11y/noLabelWithoutControl: This is a wrapper component. Consumers must provide text children to establish the accessible name.
     <label
       data-slot="label"
       className={cn(
@@ -15,7 +16,6 @@ function Label({
         className,
       )}
       htmlFor={htmlFor}
-      aria-label={htmlFor}
       {...props}
     />
   );
