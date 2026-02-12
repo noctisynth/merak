@@ -3,8 +3,8 @@ use std::{error::Error as StdError, fmt};
 use anyhow::Error as AnyError;
 use axum::http::StatusCode;
 
-use crate::auth::code::AuthCode;
 use crate::common::code::{BusinessCode, Category, Module, make_code};
+use crate::services::code::AuthCode;
 
 #[derive(Debug)]
 pub enum AuthError {

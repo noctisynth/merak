@@ -14,12 +14,12 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use merak_core::SurrealClient;
 
-use crate::auth::code::{
+use crate::common::response::{ApiResponse, EmptyData, ErrorResponse};
+use crate::services::code::{
     AuthBearerCode, AuthCode, AuthCredentialCode, AuthTokenCode, AuthUserExistsCode,
     AuthUserNotFoundCode, AuthWeakPasswordCode,
 };
-use crate::auth::{jwt::TokenPair, service::AuthService};
-use crate::common::response::{ApiResponse, EmptyData, ErrorResponse};
+use crate::services::{auth::AuthService, jwt::TokenPair};
 
 /// Authentication route state
 #[derive(Clone)]
@@ -99,8 +99,8 @@ pub struct UserResponse {
     pub updated_at: String,
 }
 
-impl From<crate::models::user::User> for UserResponse {
-    fn from(user: crate::models::user::User) -> Self {
+impl From<crate::models::auth::User> for UserResponse {
+    fn from(user: crate::models::auth::User) -> Self {
         Self {
             id: user.id.to_string(),
             username: user.username,

@@ -9,7 +9,7 @@ use super::{
     password::PasswordService,
     session::SessionService,
 };
-use crate::models::user::{User, UserInput};
+use crate::models::auth::{User, UserInput};
 
 /// Authentication service for user registration, login, and token management
 pub struct AuthService {
