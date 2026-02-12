@@ -80,10 +80,10 @@ const checkForExistence = (
   }
   if (
     'Cookie' in options.headers &&
-    options.headers.Cookie &&
-    typeof options.headers.Cookie === 'string'
+    options.headers['Cookie'] &&
+    typeof options.headers['Cookie'] === 'string'
   ) {
-    return options.headers.Cookie.includes(`${name}=`);
+    return options.headers['Cookie'].includes(`${name}=`);
   }
   return false;
 };
@@ -116,13 +116,14 @@ export const setAuthParams = async ({
         break;
       case 'cookie': {
         const value = `${name}=${token}`;
-        if ('Cookie' in options.headers && options.headers.Cookie) {
-          options.headers.Cookie = `${options.headers.Cookie}; ${value}`;
+        if ('Cookie' in options.headers && options.headers['Cookie']) {
+          options.headers['Cookie'] = `${options.headers['Cookie']}; ${value}`;
         } else {
-          options.headers.Cookie = value;
+          options.headers['Cookie'] = value;
         }
         break;
       }
+      case 'header':
       default:
         options.headers[name] = token;
         break;

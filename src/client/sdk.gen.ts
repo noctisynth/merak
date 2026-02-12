@@ -6,8 +6,6 @@ import type {
   GetMeData,
   GetMeErrors,
   GetMeResponses,
-  Hello2Data,
-  Hello2Responses,
   HelloData,
   HelloResponses,
   LoginData,
@@ -62,7 +60,7 @@ export const login = <ThrowOnError extends boolean = false>(
 /**
  * User logout
  *
- * Client should delete stored tokens (server uses stateless JWT, no additional processing needed)
+ * Invalidate the current session token on the server
  */
 export const logout = <ThrowOnError extends boolean = false>(
   options?: Options<LogoutData, ThrowOnError>,
@@ -137,15 +135,6 @@ export const hello = <ThrowOnError extends boolean = false>(
   options?: Options<HelloData, ThrowOnError>,
 ) =>
   (options?.client ?? client).get<HelloResponses, unknown, ThrowOnError>({
-    responseType: 'json',
-    url: '/hello',
-    ...options,
-  });
-
-export const hello2 = <ThrowOnError extends boolean = false>(
-  options?: Options<Hello2Data, ThrowOnError>,
-) =>
-  (options?.client ?? client).head<Hello2Responses, unknown, ThrowOnError>({
     responseType: 'json',
     url: '/hello',
     ...options,

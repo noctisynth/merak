@@ -14,8 +14,11 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 
 use merak_core::SurrealClient;
 
-use crate::common::code;
-use crate::common::response::{ApiResponse, CODE_OK, EmptyData, ErrorResponse};
+use crate::common::response::{ApiResponse, EmptyData, ErrorResponse};
+use crate::services::code::{
+    AuthBearerCode, AuthCode, AuthCredentialCode, AuthTokenCode, AuthUserExistsCode,
+    AuthUserNotFoundCode, AuthWeakPasswordCode,
+};
 use crate::services::{auth::AuthService, jwt::TokenPair};
 
 /// Authentication route state
@@ -41,8 +44,8 @@ impl FromRequestParts<AuthState> for BearerToken {
                 .await
                 .map_err(|e| {
                     (
-                        StatusCode::OK,
-                        Json(ErrorResponse::new(code::auth::UNAUTHORIZED, e.to_string())),
+                        StatusCode::UNAUTHORIZED,
+                        Json(ErrorResponse::new(AuthCode::Unauthorized, e.to_string())),
                     )
                         .into_response()
                 })?;
@@ -109,7 +112,7 @@ impl From<crate::models::auth::User> for UserResponse {
 }
 
 /// Registration response
-#[derive(Debug, Serialize, ToSchema, ToResponse)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct RegisterResponse {
     /// User information
     pub user: UserResponse,
@@ -142,9 +145,9 @@ pub struct RefreshTokenResponse {
     request_body = RegisterRequest,
     responses(
         (status = 201, description = "Registration successful", body = ApiResponse<RegisterResponse>),
-        (status = 400, description = "Invalid request parameters", body = ErrorResponse),
-        (status = 409, description = "Username or email already exists", body = ErrorResponse),
-        (status = 500, description = "Internal server error", body = ErrorResponse)
+        (status = 400, description = "Weak password", body = inline(ErrorResponse<AuthWeakPasswordCode>)),
+        (status = 409, description = "Username or email already exists", body = inline(ErrorResponse<AuthUserExistsCode>)),
+        (status = 500, description = "Internal server error", body = ErrorResponse),
     ),
     tag = "Authentication"
 )]
@@ -166,11 +169,11 @@ pub async fn register(
             })),
         )
             .into_response(),
-        Err(e) => {
-            let message = e.to_string();
-            let code = e.code();
-            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
-        }
+        Err(e) => (
+            e.status_code(),
+            Json(ErrorResponse::new(e.code(), e.to_string())),
+        )
+            .into_response(),
     }
 }
 
@@ -183,8 +186,8 @@ pub async fn register(
     request_body = LoginRequest,
     responses(
         (status = 200, description = "Login successful", body = ApiResponse<LoginResponse>),
-        (status = 401, description = "Invalid username or password", body = ErrorResponse),
-        (status = 500, description = "Internal server error", body = ErrorResponse)
+        (status = 401, description = "Invalid credentials", body = inline(ErrorResponse<AuthCredentialCode>)),
+        (status = 500, description = "Internal server error", body = ErrorResponse),
     ),
     tag = "Authentication"
 )]
@@ -203,11 +206,11 @@ pub async fn login(State(state): State<AuthState>, Json(req): Json<LoginRequest>
             })),
         )
             .into_response(),
-        Err(e) => {
-            let message = e.to_string();
-            let code = e.code();
-            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
-        }
+        Err(e) => (
+            e.status_code(),
+            Json(ErrorResponse::new(e.code(), e.to_string())),
+        )
+            .into_response(),
     }
 }
 
@@ -220,8 +223,8 @@ pub async fn login(State(state): State<AuthState>, Json(req): Json<LoginRequest>
     request_body = RefreshTokenRequest,
     responses(
         (status = 200, description = "Token refresh successful", body = ApiResponse<RefreshTokenResponse>),
-        (status = 401, description = "Refresh token invalid or expired", body = ErrorResponse),
-        (status = 500, description = "Internal server error", body = ErrorResponse)
+        (status = 401, description = "Token invalid or expired", body = inline(ErrorResponse<AuthTokenCode>)),
+        (status = 500, description = "Internal server error", body = ErrorResponse),
     ),
     tag = "Authentication"
 )]
@@ -240,11 +243,11 @@ pub async fn refresh_token(
             Json(ApiResponse::ok(RefreshTokenResponse { tokens })),
         )
             .into_response(),
-        Err(e) => {
-            let message = e.to_string();
-            let code = e.code();
-            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
-        }
+        Err(e) => (
+            e.status_code(),
+            Json(ErrorResponse::new(e.code(), e.to_string())),
+        )
+            .into_response(),
     }
 }
 
@@ -256,7 +259,7 @@ pub async fn refresh_token(
     path = "/logout",
     responses(
         (status = 200, description = "Logout successful", body = ApiResponse<EmptyData>),
-        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 401, description = "Unauthorized", body = inline(ErrorResponse<AuthBearerCode>)),
         (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
     security(
@@ -269,20 +272,12 @@ pub async fn logout(State(state): State<AuthState>, BearerToken(bearer): BearerT
 
     let token = bearer.token();
     match auth_service.logout(&state.db, token).await {
-        Ok(()) => (
-            StatusCode::OK,
-            Json(ApiResponse::new(
-                CODE_OK,
-                "Logged out successfully",
-                EmptyData::default(),
-            )),
+        Ok(()) => (StatusCode::OK, Json(ApiResponse::ok(EmptyData::default()))).into_response(),
+        Err(e) => (
+            e.status_code(),
+            Json(ErrorResponse::new(e.code(), e.to_string())),
         )
             .into_response(),
-        Err(e) => {
-            let message = e.to_string();
-            let code = e.code();
-            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
-        }
     }
 }
 
@@ -294,8 +289,8 @@ pub async fn logout(State(state): State<AuthState>, BearerToken(bearer): BearerT
     path = "/me",
     responses(
         (status = 200, description = "Successfully retrieved user information", body = ApiResponse<UserResponse>),
-        (status = 401, description = "Unauthorized", body = ErrorResponse),
-        (status = 404, description = "User not found", body = ErrorResponse),
+        (status = 401, description = "Unauthorized", body = inline(ErrorResponse<AuthBearerCode>)),
+        (status = 404, description = "User not found", body = inline(ErrorResponse<AuthUserNotFoundCode>)),
         (status = 500, description = "Internal server error", body = ErrorResponse)
     ),
     security(
@@ -313,9 +308,11 @@ pub async fn get_me(State(state): State<AuthState>, BearerToken(bearer): BearerT
     let claims = match auth_service.verify_access_token(&state.db, token).await {
         Ok(claims) => claims,
         Err(e) => {
-            let message = e.to_string();
-            let code = e.code();
-            return (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response();
+            return (
+                e.status_code(),
+                Json(ErrorResponse::new(e.code(), e.to_string())),
+            )
+                .into_response();
         }
     };
 
@@ -326,11 +323,11 @@ pub async fn get_me(State(state): State<AuthState>, BearerToken(bearer): BearerT
             Json(ApiResponse::ok(UserResponse::from(user))),
         )
             .into_response(),
-        Err(e) => {
-            let message = e.to_string();
-            let code = e.code();
-            (StatusCode::OK, Json(ErrorResponse::new(code, message))).into_response()
-        }
+        Err(e) => (
+            e.status_code(),
+            Json(ErrorResponse::new(e.code(), e.to_string())),
+        )
+            .into_response(),
     }
 }
 
