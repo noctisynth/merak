@@ -60,6 +60,7 @@ macro_rules! define_codes {
             pub fn schema_items() -> Vec<utoipa::openapi::RefOr<utoipa::openapi::Schema>> {
                 vec![$(
                     utoipa::openapi::ObjectBuilder::new()
+                        .title(Some(concat!($($desc),*).trim()))
                         .schema_type(utoipa::openapi::schema::Type::Integer)
                         .format(Some(utoipa::openapi::SchemaFormat::KnownFormat(
                             utoipa::openapi::KnownFormat::Int32,
@@ -69,12 +70,30 @@ macro_rules! define_codes {
                         .into(),
                 )*]
             }
+
+            pub fn code_entries() -> Vec<(i32, &'static str)> {
+                vec![$(
+                    ($crate::common::code::make_code($cat, $mod_, $reason).0, concat!($($desc),*).trim()),
+                )*]
+            }
         }
 
         impl utoipa::PartialSchema for $enum_name {
             fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::Schema> {
-                Self::schema_items().into_iter()
-                    .fold(utoipa::openapi::OneOfBuilder::new(), |b, s| b.item(s))
+                let values = vec![$($crate::common::code::make_code($cat, $mod_, $reason).0),*];
+                let descs: Vec<&str> = vec![$(concat!($($desc),*).trim()),*];
+                let description = values.iter().zip(descs.iter())
+                    .map(|(v, d)| format!("- `{}` — {}", v, d))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                utoipa::openapi::ObjectBuilder::new()
+                    .schema_type(utoipa::openapi::schema::Type::Integer)
+                    .format(Some(utoipa::openapi::SchemaFormat::KnownFormat(
+                        utoipa::openapi::KnownFormat::Int32,
+                    )))
+                    .enum_values(Some(values))
+                    .description(Some(description))
                     .into()
             }
         }
@@ -84,6 +103,11 @@ macro_rules! define_codes {
                 std::borrow::Cow::Borrowed(stringify!($enum_name))
             }
         }
+
+        inventory::submit!($crate::common::code::CodeSchemaEntry {
+            name: <$enum_name as utoipa::ToSchema>::name,
+            schema: <$enum_name as utoipa::PartialSchema>::schema,
+        });
     };
 }
 
@@ -117,10 +141,22 @@ macro_rules! combine_codes {
 
         impl utoipa::PartialSchema for $name {
             fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::Schema> {
-                let mut items = Vec::new();
-                $(items.extend(<$code_type>::schema_items());)+
-                items.into_iter()
-                    .fold(utoipa::openapi::OneOfBuilder::new(), |b, s| b.item(s))
+                let mut entries = Vec::new();
+                $(entries.extend(<$code_type>::code_entries());)+
+
+                let values: Vec<i32> = entries.iter().map(|(v, _)| *v).collect();
+                let description = entries.iter()
+                    .map(|(v, d)| format!("- `{}` — {}", v, d))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                utoipa::openapi::ObjectBuilder::new()
+                    .schema_type(utoipa::openapi::schema::Type::Integer)
+                    .format(Some(utoipa::openapi::SchemaFormat::KnownFormat(
+                        utoipa::openapi::KnownFormat::Int32,
+                    )))
+                    .enum_values(Some(values))
+                    .description(Some(description))
                     .into()
             }
         }
@@ -130,7 +166,28 @@ macro_rules! combine_codes {
                 std::borrow::Cow::Borrowed(stringify!($name))
             }
         }
+
+        inventory::submit!($crate::common::code::CodeSchemaEntry {
+            name: <$name as utoipa::ToSchema>::name,
+            schema: <$name as utoipa::PartialSchema>::schema,
+        });
     };
+}
+
+pub struct CodeSchemaEntry {
+    pub name: fn() -> std::borrow::Cow<'static, str>,
+    pub schema: fn() -> RefOr<Schema>,
+}
+
+inventory::collect!(CodeSchemaEntry);
+
+pub fn register_all_codes(api: &mut utoipa::openapi::OpenApi) {
+    let components = api.components.get_or_insert_with(Default::default);
+    for entry in inventory::iter::<CodeSchemaEntry> {
+        components
+            .schemas
+            .insert((entry.name)().to_string(), (entry.schema)());
+    }
 }
 
 pub(crate) use combine_codes;
