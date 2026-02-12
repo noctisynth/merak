@@ -96,8 +96,8 @@ pub struct UserResponse {
     pub updated_at: String,
 }
 
-impl From<crate::models::user::User> for UserResponse {
-    fn from(user: crate::models::user::User) -> Self {
+impl From<crate::models::auth::User> for UserResponse {
+    fn from(user: crate::models::auth::User) -> Self {
         Self {
             id: user.id.to_string(),
             username: user.username,
