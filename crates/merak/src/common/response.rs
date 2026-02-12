@@ -3,7 +3,10 @@ use std::marker::PhantomData;
 use chrono::Utc;
 use serde::Serialize;
 use utoipa::ToSchema;
-use utoipa::openapi::{KnownFormat, ObjectBuilder, RefOr, Schema, SchemaFormat, schema::Type};
+use utoipa::openapi::{
+    KnownFormat, ObjectBuilder, RefOr, Schema, SchemaFormat,
+    schema::{Ref, Type},
+};
 
 pub use crate::common::code::CODE_OK;
 use crate::common::code::{BusinessCode, SuccessCode};
@@ -86,13 +89,9 @@ impl ApiResponse<EmptyData> {
     }
 }
 
-impl<T, C> utoipa::__dev::ComposeSchema for ApiResponse<T, C> {
-    fn compose(mut generics: Vec<RefOr<Schema>>) -> RefOr<Schema> {
-        let data_schema = if generics.is_empty() {
-            <EmptyData as utoipa::PartialSchema>::schema()
-        } else {
-            generics.remove(0)
-        };
+impl<T: utoipa::ToSchema, C> utoipa::__dev::ComposeSchema for ApiResponse<T, C> {
+    fn compose(_generics: Vec<RefOr<Schema>>) -> RefOr<Schema> {
+        let data_schema = RefOr::Ref(Ref::from_schema_name(T::name().as_ref()));
         api_response_schema(
             <SuccessCode as utoipa::PartialSchema>::schema(),
             data_schema,
@@ -100,7 +99,7 @@ impl<T, C> utoipa::__dev::ComposeSchema for ApiResponse<T, C> {
     }
 }
 
-impl<T, C> utoipa::ToSchema for ApiResponse<T, C> {
+impl<T: utoipa::ToSchema, C> utoipa::ToSchema for ApiResponse<T, C> {
     fn name() -> std::borrow::Cow<'static, str> {
         std::borrow::Cow::Borrowed("ApiResponse")
     }
