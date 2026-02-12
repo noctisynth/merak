@@ -112,7 +112,7 @@ impl From<crate::models::auth::User> for UserResponse {
 }
 
 /// Registration response
-#[derive(Debug, Serialize, ToSchema, ToResponse)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct RegisterResponse {
     /// User information
     pub user: UserResponse,

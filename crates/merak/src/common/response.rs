@@ -3,18 +3,16 @@ use std::marker::PhantomData;
 use chrono::Utc;
 use serde::Serialize;
 use utoipa::ToSchema;
-use utoipa::openapi::{KnownFormat, ObjectBuilder, RefOr, Schema, SchemaFormat, schema::Type};
+use utoipa::openapi::Ref;
+use utoipa::openapi::{RefOr, Schema};
 
+use crate::common::code::BusinessCode;
 pub use crate::common::code::CODE_OK;
-use crate::common::code::{BusinessCode, SuccessCode};
 
 #[derive(Debug, Serialize, ToSchema, Default)]
 pub struct EmptyData {}
 
-// --- ErrorResponse ---
-
-#[derive(Debug, Serialize)]
-#[serde(bound(serialize = ""))]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorResponse<C = BusinessCode> {
     pub code: BusinessCode,
     pub message: String,
@@ -34,37 +32,20 @@ impl ErrorResponse {
     }
 }
 
-impl<C> utoipa::__dev::ComposeSchema for ErrorResponse<C> {
-    fn compose(mut generics: Vec<RefOr<Schema>>) -> RefOr<Schema> {
-        let code_schema = if generics.is_empty() {
-            <BusinessCode as utoipa::PartialSchema>::schema()
-        } else {
-            generics.remove(0)
-        };
-        error_response_schema(code_schema)
-    }
+fn compose_schame<T: ToSchema>() -> RefOr<Schema> {
+    RefOr::Ref(Ref::from_schema_name(T::name().as_ref()))
 }
 
-impl<C> utoipa::ToSchema for ErrorResponse<C> {
-    fn name() -> std::borrow::Cow<'static, str> {
-        std::borrow::Cow::Borrowed("ErrorResponse")
-    }
-}
-
-// --- ApiResponse ---
-
-#[derive(Debug, Serialize)]
-#[serde(bound(serialize = "T: Serialize"))]
-pub struct ApiResponse<T, C = SuccessCode> {
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ApiResponse<T: Serialize + ToSchema> {
     pub code: BusinessCode,
     pub message: String,
     pub timestamp: i64,
+    #[schema(schema_with = compose_schame::<T>)]
     pub data: T,
-    #[serde(skip)]
-    _codes: PhantomData<C>,
 }
 
-impl<T> ApiResponse<T> {
+impl<T: Serialize + ToSchema> ApiResponse<T> {
     pub fn ok(data: T) -> Self {
         Self::new(CODE_OK, "OK", data)
     }
@@ -75,7 +56,6 @@ impl<T> ApiResponse<T> {
             code: code.into(),
             message: message.into(),
             data,
-            _codes: PhantomData,
         }
     }
 }
@@ -84,57 +64,4 @@ impl ApiResponse<EmptyData> {
     pub fn error(code: impl Into<BusinessCode>, message: impl Into<String>) -> Self {
         Self::new(code, message, EmptyData::default())
     }
-}
-
-impl<T, C> utoipa::__dev::ComposeSchema for ApiResponse<T, C> {
-    fn compose(mut generics: Vec<RefOr<Schema>>) -> RefOr<Schema> {
-        let data_schema = if generics.is_empty() {
-            <EmptyData as utoipa::PartialSchema>::schema()
-        } else {
-            generics.remove(0)
-        };
-        api_response_schema(
-            <SuccessCode as utoipa::PartialSchema>::schema(),
-            data_schema,
-        )
-    }
-}
-
-impl<T, C> utoipa::ToSchema for ApiResponse<T, C> {
-    fn name() -> std::borrow::Cow<'static, str> {
-        std::borrow::Cow::Borrowed("ApiResponse")
-    }
-}
-
-// --- Schema helpers ---
-
-fn timestamp_schema() -> RefOr<Schema> {
-    ObjectBuilder::new()
-        .schema_type(Type::Integer)
-        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Int64)))
-        .into()
-}
-
-fn error_response_schema(code_schema: RefOr<Schema>) -> RefOr<Schema> {
-    ObjectBuilder::new()
-        .property("code", code_schema)
-        .required("code")
-        .property("message", ObjectBuilder::new().schema_type(Type::String))
-        .required("message")
-        .property("timestamp", timestamp_schema())
-        .required("timestamp")
-        .into()
-}
-
-fn api_response_schema(code_schema: RefOr<Schema>, data_schema: RefOr<Schema>) -> RefOr<Schema> {
-    ObjectBuilder::new()
-        .property("code", code_schema)
-        .required("code")
-        .property("message", ObjectBuilder::new().schema_type(Type::String))
-        .required("message")
-        .property("timestamp", timestamp_schema())
-        .required("timestamp")
-        .property("data", data_schema)
-        .required("data")
-        .into()
 }
