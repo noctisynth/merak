@@ -13,7 +13,8 @@ pub use crate::common::code::CODE_OK;
 pub struct EmptyData {}
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct ErrorResponse<C = BusinessCode> {
+pub struct ErrorResponse<C: ToSchema = BusinessCode> {
+    #[schema(schema_with = inline_schema::<C>)]
     pub code: BusinessCode,
     pub message: String,
     pub timestamp: i64,
@@ -34,6 +35,10 @@ impl ErrorResponse {
 
 fn compose_schame<T: ToSchema>() -> RefOr<Schema> {
     RefOr::Ref(Ref::from_schema_name(T::name().as_ref()))
+}
+
+fn inline_schema<T: ToSchema>() -> RefOr<Schema> {
+    T::schema()
 }
 
 #[derive(Debug, Serialize, ToSchema)]
