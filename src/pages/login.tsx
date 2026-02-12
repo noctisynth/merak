@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
 import { login } from '@/client';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,28 +15,37 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+type LoginFormValues = {
+  identifier: string;
+  password: string;
+};
+
 export default function Login() {
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>();
+
+  const onSubmit = async (data: LoginFormValues) => {
     try {
       setLoading(true);
-      setError('');
+      setServerError('');
 
       await login({
         body: {
-          identifier,
-          password,
+          identifier: data.identifier,
+          password: data.password,
         },
       });
 
-      navigate('/register');
+      navigate('/');
     } catch {
-      setError('Invalid email or password');
+      setServerError('Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -59,7 +70,7 @@ export default function Login() {
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label
                 htmlFor="login-email"
@@ -71,9 +82,15 @@ export default function Login() {
                 id="login-email"
                 className="bg-background"
                 placeholder="m@example.com"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                {...register('identifier', {
+                  required: 'Email is required',
+                })}
               />
+              {errors.identifier && (
+                <p className="text-sm text-destructive">
+                  {errors.identifier.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -93,22 +110,25 @@ export default function Login() {
                 type="password"
                 className="bg-background"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register('password', {
+                  required: 'Password is required',
+                })}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {serverError && (
+              <p className="text-sm text-destructive">{serverError}</p>
+            )}
 
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? 'Logging in...' : 'Login'}
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>
