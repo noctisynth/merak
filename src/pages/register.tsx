@@ -63,7 +63,7 @@ export default function Register() {
           </CardDescription>
           <CardAction>
             <Link
-              to="/"
+              to="/login"
               className="text-sm font-medium text-foreground hover:underline"
             >
               Log in
