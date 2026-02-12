@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
-import { register } from '@/client';
+import { register as registerUser } from '@/client';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,31 +15,39 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+type RegisterFormValues = {
+  username: string;
+  email: string;
+  password: string;
+};
+
 export default function Register() {
   const navigate = useNavigate();
-
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormValues>();
+
+  const onSubmit = async (data: RegisterFormValues) => {
     try {
       setLoading(true);
-      setError('');
+      setServerError('');
 
-      await register({
+      await registerUser({
         body: {
-          username,
-          email,
-          password,
+          username: data.username,
+          email: data.email,
+          password: data.password,
         },
       });
 
       navigate('/login');
     } catch {
-      setError('Sign-up failed');
+      setServerError('Sign-up failed');
     } finally {
       setLoading(false);
     }
@@ -62,7 +72,7 @@ export default function Register() {
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label
                 htmlFor="register-username"
@@ -73,9 +83,15 @@ export default function Register() {
               <Input
                 id="register-username"
                 className="bg-background"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                {...register('username', {
+                  required: 'Username is required',
+                })}
               />
+              {errors.username && (
+                <p className="text-sm text-destructive">
+                  {errors.username.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -88,9 +104,15 @@ export default function Register() {
               <Input
                 id="email"
                 className="bg-background"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register('email', {
+                  required: 'Email is required',
+                })}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -104,22 +126,29 @@ export default function Register() {
                 id="register-password"
                 type="password"
                 className="bg-background"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register('password', {
+                  required: 'Password is required',
+                  minLength: {
+                    value: 6,
+                    message: 'Password must be at least 6 characters',
+                  },
+                })}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {serverError && (
+              <p className="text-sm text-destructive">{serverError}</p>
+            )}
 
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? 'Registering...' : 'Register'}
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>
