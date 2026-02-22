@@ -1,6 +1,10 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
-import { register } from '@/client';
+import { z } from 'zod';
+import { register as registerUser } from '@/client';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,31 +17,44 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const registerSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  email: z.string().min(1, 'Email is required').email('Invalid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
 export default function Register() {
   const navigate = useNavigate();
-
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async () => {
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (data: RegisterFormValues) => {
     try {
       setLoading(true);
-      setError('');
+      setServerError('');
 
-      await register({
+      await registerUser({
         body: {
-          username,
-          email,
-          password,
+          username: data.username,
+          email: data.email,
+          password: data.password,
         },
       });
 
       navigate('/login');
     } catch {
-      setError('Sign-up failed');
+      setServerError('Sign-up failed');
     } finally {
       setLoading(false);
     }
@@ -53,7 +70,7 @@ export default function Register() {
           </CardDescription>
           <CardAction>
             <Link
-              to="/"
+              to="/login"
               className="text-sm font-medium text-foreground hover:underline"
             >
               Log in
@@ -62,64 +79,97 @@ export default function Register() {
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="register-username"
-                className="text-sm font-medium text-foreground"
-              >
-                Username
-              </Label>
-              <Input
-                id="register-username"
-                className="bg-background"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Username */}
+            <Controller
+              name="username"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="register-username"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Username
+                  </Label>
+                  <Input
+                    {...field}
+                    id="register-username"
+                    className="bg-background"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-foreground"
-              >
-                Email
-              </Label>
-              <Input
-                id="email"
-                className="bg-background"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+            {/* Email */}
+            <Controller
+              name="email"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="email"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Email
+                  </Label>
+                  <Input
+                    {...field}
+                    id="email"
+                    className="bg-background"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="register-password"
-                className="text-sm font-medium text-foreground"
-              >
-                Password
-              </Label>
-              <Input
-                id="register-password"
-                type="password"
-                className="bg-background"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            {/* Password */}
+            <Controller
+              name="password"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="register-password"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Password
+                  </Label>
+                  <Input
+                    {...field}
+                    id="register-password"
+                    type="password"
+                    className="bg-background"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {serverError && (
+              <p className="text-sm text-destructive">{serverError}</p>
+            )}
 
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? 'Registering...' : 'Register'}
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>
