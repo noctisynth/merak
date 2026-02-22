@@ -1,6 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
+import { z } from 'zod';
 import { register as registerUser } from '@/client';
 
 import { Button } from '@/components/ui/button';
@@ -15,22 +17,27 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-type RegisterFormValues = {
-  username: string;
-  email: string;
-  password: string;
-};
+const registerSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  email: z.string().min(1, 'Email is required').email('Invalid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterFormValues>();
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+    },
+  });
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
@@ -72,74 +79,88 @@ export default function Register() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="register-username"
-                className="text-sm font-medium text-foreground"
-              >
-                Username
-              </Label>
-              <Input
-                id="register-username"
-                className="bg-background"
-                {...register('username', {
-                  required: 'Username is required',
-                })}
-              />
-              {errors.username && (
-                <p className="text-sm text-destructive">
-                  {errors.username.message}
-                </p>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Username */}
+            <Controller
+              name="username"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="register-username"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Username
+                  </Label>
+                  <Input
+                    {...field}
+                    id="register-username"
+                    className="bg-background"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
+            />
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-foreground"
-              >
-                Email
-              </Label>
-              <Input
-                id="email"
-                className="bg-background"
-                {...register('email', {
-                  required: 'Email is required',
-                })}
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">
-                  {errors.email.message}
-                </p>
+            {/* Email */}
+            <Controller
+              name="email"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="email"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Email
+                  </Label>
+                  <Input
+                    {...field}
+                    id="email"
+                    className="bg-background"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
+            />
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="register-password"
-                className="text-sm font-medium text-foreground"
-              >
-                Password
-              </Label>
-              <Input
-                id="register-password"
-                type="password"
-                className="bg-background"
-                {...register('password', {
-                  required: 'Password is required',
-                  minLength: {
-                    value: 6,
-                    message: 'Password must be at least 6 characters',
-                  },
-                })}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">
-                  {errors.password.message}
-                </p>
+            {/* Password */}
+            <Controller
+              name="password"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="register-password"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Password
+                  </Label>
+                  <Input
+                    {...field}
+                    id="register-password"
+                    type="password"
+                    className="bg-background"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
+            />
 
             {serverError && (
               <p className="text-sm text-destructive">{serverError}</p>

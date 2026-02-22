@@ -1,6 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
+import { z } from 'zod';
 import { login } from '@/client';
 
 import { Button } from '@/components/ui/button';
@@ -15,21 +17,28 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-type LoginFormValues = {
-  identifier: string;
-  password: string;
-};
+const loginSchema = z.object({
+  identifier: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState('');
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormValues>();
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      identifier: '',
+      password: '',
+    },
+  });
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
@@ -70,56 +79,68 @@ export default function Login() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="login-email"
-                className="text-sm font-medium text-foreground"
-              >
-                Email
-              </Label>
-              <Input
-                id="login-email"
-                className="bg-background"
-                placeholder="m@example.com"
-                {...register('identifier', {
-                  required: 'Email is required',
-                })}
-              />
-              {errors.identifier && (
-                <p className="text-sm text-destructive">
-                  {errors.identifier.message}
-                </p>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Email */}
+            <Controller
+              name="identifier"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="login-email"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Email
+                  </Label>
+                  <Input
+                    {...field}
+                    id="login-email"
+                    className="bg-background"
+                    placeholder="m@example.com"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
+            />
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="login-password"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Password
-                </Label>
-                <span className="text-sm text-muted-foreground cursor-pointer">
-                  Forgot your password?
-                </span>
-              </div>
-              <Input
-                id="login-password"
-                type="password"
-                className="bg-background"
-                placeholder="••••••••"
-                {...register('password', {
-                  required: 'Password is required',
-                })}
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">
-                  {errors.password.message}
-                </p>
+            {/* Password */}
+            <Controller
+              name="password"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor="login-password"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Password
+                    </Label>
+                    <span className="text-sm text-muted-foreground cursor-pointer">
+                      Forgot your password?
+                    </span>
+                  </div>
+                  <Input
+                    {...field}
+                    id="login-password"
+                    type="password"
+                    className="bg-background"
+                    placeholder="••••••••"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
+            />
 
             {serverError && (
               <p className="text-sm text-destructive">{serverError}</p>
