@@ -17,10 +17,10 @@ merak-macros = { path = "../macros", version = "0.1.0-alpha.0" }
 rand = "0.9"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-surrealdb = "2.5.0"
+surrealdb = "3.0.5"
 tokio = { version = "1.49.0", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors"] }
 utoipa = { version = "5.4.0", features = ["axum_extras", "chrono"] }
 utoipa-axum = "0.2.0"
 utoipa-redoc = { version = "6.0.0", features = ["axum"] }
-utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 uuid = { version = "1.20", features = ["serde", "v4"] }

@@ -5,6 +5,7 @@ use axum::http::StatusCode;
 use axum::routing::get;
 use serde::Serialize;
 use surrealdb::opt::auth::Root;
+use tower_http::cors::{Any, CorsLayer};
 use utoipa::{OpenApi, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_redoc::{Redoc, Servable};
@@ -62,8 +63,8 @@ async fn main() -> anyhow::Result<()> {
 
     // Prepare credentials as Root
     let creds = Root {
-        username: &env::var("SURREAL_USER").unwrap_or("root".to_string()),
-        password: &env::var("SURREAL_PASS").unwrap_or("root".to_string()),
+        username: env::var("SURREAL_USER").unwrap_or("root".to_string()),
+        password: env::var("SURREAL_PASS").unwrap_or("root".to_string()),
     };
 
     // Connect to SurrealDB (Any)
@@ -86,8 +87,14 @@ async fn main() -> anyhow::Result<()> {
         .fallback(not_found)
         .split_for_parts();
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
     // Redoc UI
     let router = router
+        .layer(cors)
         .merge(Redoc::with_url("/redoc", api.clone()))
         .route("/apidoc/openapi.json", get(async move || axum::Json(api)));
 

@@ -61,6 +61,30 @@ where
     })
 }
 
+pub(crate) fn expand_surreal_value_impl(ident: &Ident) -> TokenStream {
+    quote! {
+        impl ::surrealdb::types::SurrealValue for #ident {
+            fn kind_of() -> ::surrealdb::types::Kind {
+                ::surrealdb::types::Kind::Object
+            }
+
+            fn is_value(value: &::surrealdb::types::Value) -> bool {
+                matches!(value, ::surrealdb::types::Value::Object(_))
+            }
+
+            fn into_value(self) -> ::surrealdb::types::Value {
+                let json = ::serde_json::to_value(self).expect("Failed to serialize model");
+                <::serde_json::Value as ::surrealdb::types::SurrealValue>::into_value(json)
+            }
+
+            fn from_value(value: ::surrealdb::types::Value) -> Result<Self, ::surrealdb::types::Error> {
+                let json: ::serde_json::Value = <::serde_json::Value as ::surrealdb::types::SurrealValue>::from_value(value)?;
+                ::serde_json::from_value(json).map_err(|e| ::surrealdb::types::Error::internal(e.to_string()))
+            }
+        }
+    }
+}
+
 pub(crate) fn expand_data_impl<'a, F>(
     fields: F,
     vis: &Visibility,
@@ -82,7 +106,12 @@ where
         let field_ident = field.ident.as_ref().unwrap();
         if is_record_id(&field.ty) {
             quote! {
-                #field_ident: model.#field_ident.to_string()
+                #field_ident: {
+                    let rid = &model.#field_ident;
+                    let mut s = ::std::string::String::new();
+                    ::surrealdb::types::ToSql::fmt_sql(rid, &mut s, ::surrealdb::types::SqlFormat::SingleLine);
+                    s
+                }
             }
         } else {
             quote! {

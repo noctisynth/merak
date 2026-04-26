@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use merak_macros::Model;
 use serde::{Deserialize, Serialize};
-use surrealdb::RecordId;
+use surrealdb::types::RecordId;
 
 #[derive(Model, Serialize, Deserialize)]
 #[model(table_name = "auth_sessions")]

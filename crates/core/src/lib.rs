@@ -1,6 +1,7 @@
 use serde::Serialize;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
+use surrealdb::types::SurrealValue;
 
 pub mod prelude;
 
@@ -8,12 +9,12 @@ pub type SurrealClient = Surreal<Any>;
 
 pub trait Model
 where
-    Self: Serialize + for<'de> serde::Deserialize<'de> + Sized,
+    Self: Serialize + for<'de> serde::Deserialize<'de> + Sized + SurrealValue,
 {
     const TABLE_NAME: &'static str;
     #[cfg(feature = "utoipa")]
-    type Data: Serialize + 'static;
-    type Input: Serialize + 'static;
+    type Data: Serialize + SurrealValue + 'static;
+    type Input: Serialize + SurrealValue + 'static;
     fn table_name(&self) -> &'static str;
     #[cfg(feature = "utoipa")]
     fn into_data(self) -> Self::Data;
@@ -30,8 +31,8 @@ pub struct Objects<'c, T, I> {
 
 impl<'c, T, I> Objects<'c, T, I>
 where
-    T: Model,
-    I: Serialize + 'static,
+    T: Model + SurrealValue,
+    I: Serialize + SurrealValue + 'static,
 {
     pub fn new(client: &'c SurrealClient) -> Self {
         Objects {

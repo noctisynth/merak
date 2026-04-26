@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use chrono::{Duration, Utc};
 use merak_core::{Model, SurrealClient};
-use surrealdb::RecordId;
+use surrealdb::types::RecordId;
 use uuid::Uuid;
 
 use super::error::{AuthError, AuthResult};

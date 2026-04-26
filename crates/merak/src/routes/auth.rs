@@ -15,6 +15,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use merak_core::SurrealClient;
 
 use crate::common::code;
+use crate::common::record_id_util::rid_to_string;
 use crate::common::response::{ApiResponse, CODE_OK, EmptyData, ErrorResponse};
 use crate::services::{auth::AuthService, jwt::TokenPair};
 
@@ -99,7 +100,7 @@ pub struct UserResponse {
 impl From<crate::models::auth::User> for UserResponse {
     fn from(user: crate::models::auth::User) -> Self {
         Self {
-            id: user.id.to_string(),
+            id: rid_to_string(&user.id),
             username: user.username,
             email: user.email,
             created_at: user.created_at.to_rfc3339(),

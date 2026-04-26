@@ -7,7 +7,9 @@ use syn::{DeriveInput, Ident, parse_macro_input};
 
 use crate::{
     attr::{FieldArgs, ModelArgs},
-    expand::{expand_data_impl, expand_foreign_methods, expand_input_struct},
+    expand::{
+        expand_data_impl, expand_foreign_methods, expand_input_struct, expand_surreal_value_impl,
+    },
     utils::is_record_id,
 };
 
@@ -104,14 +106,22 @@ fn expand_model(input: DeriveInput) -> syn::Result<TokenStream> {
         }
     };
 
+    let input_surreal_value = expand_surreal_value_impl(&input_ident);
+    let data_surreal_value = expand_surreal_value_impl(&data_ident);
+    let ident_surreal_value = expand_surreal_value_impl(ident);
+
     Ok(quote! {
         use ::merak_core::prelude::*;
 
         #input_struct
+        #input_surreal_value
 
         #data_impl
+        #data_surreal_value
 
         #trait_impl
+
+        #ident_surreal_value
 
         impl #ident {
             #get_by_primary_key

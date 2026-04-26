@@ -1,7 +1,9 @@
 use anyhow::anyhow;
 use chrono::Utc;
 use merak_core::{Model, SurrealClient};
-use surrealdb::RecordId;
+use surrealdb::types::RecordId;
+
+use crate::common::record_id_util::rid_to_string;
 
 use super::{
     error::{AuthError, AuthResult},
@@ -111,8 +113,9 @@ impl AuthService {
             .session_service
             .create_session(db, &user.id, self.jwt_service.refresh_exp_seconds())
             .await?;
+        let id_str = rid_to_string(&user.id);
         let token_pair = self.jwt_service.generate_token_pair(
-            &user.id.to_string(),
+            &id_str,
             &user.username,
             &user.email,
             &session.session_id,
@@ -163,8 +166,9 @@ impl AuthService {
             .session_service
             .create_session(db, &user.id, self.jwt_service.refresh_exp_seconds())
             .await?;
+        let id_str = rid_to_string(&user.id);
         let token_pair = self.jwt_service.generate_token_pair(
-            &user.id.to_string(),
+            &id_str,
             &user.username,
             &user.email,
             &session.session_id,
@@ -197,7 +201,8 @@ impl AuthService {
             .session_service
             .load_active_session(db, &claims.sid)
             .await?;
-        if session.user_id.to_string() != claims.sub {
+        let user_id_str = rid_to_string(&session.user_id);
+        if user_id_str != claims.sub {
             return Err(AuthError::SessionInvalid(
                 "Session user mismatch".to_string(),
             ));
@@ -240,7 +245,8 @@ impl AuthService {
             .session_service
             .load_active_session(db, &claims.sid)
             .await?;
-        if session.user_id.to_string() != claims.sub {
+        let user_id_str = rid_to_string(&session.user_id);
+        if user_id_str != claims.sub {
             return Err(AuthError::SessionInvalid(
                 "Session user mismatch".to_string(),
             ));
@@ -283,10 +289,23 @@ impl AuthService {
     /// # Returns
     /// User information
     pub async fn get_user(&self, db: &SurrealClient, user_id: &str) -> AuthResult<User> {
-        let record_id: RecordId = user_id
-            .parse()
+        let record_id = RecordId::parse_simple(user_id)
             .map_err(|e| AuthError::Internal(anyhow!("Failed to parse user id: {}", e)))?;
-        let user = User::get_by_id(db, &record_id.key().to_string()).await?;
+        let key = match &record_id.key {
+            surrealdb::types::RecordIdKey::String(s) => s.clone(),
+            surrealdb::types::RecordIdKey::Number(n) => n.to_string(),
+            surrealdb::types::RecordIdKey::Uuid(u) => u.to_string(),
+            other => {
+                let mut s = String::new();
+                surrealdb::types::ToSql::fmt_sql(
+                    other,
+                    &mut s,
+                    surrealdb::types::SqlFormat::SingleLine,
+                );
+                s
+            }
+        };
+        let user = User::get_by_id(db, &key).await?;
         user.ok_or(AuthError::UserNotFound)
     }
 

@@ -1,6 +1,6 @@
 use merak_macros::Model;
 use serde::{Deserialize, Serialize};
-use surrealdb::RecordId;
+use surrealdb::types::RecordId;
 
 #[test]
 pub fn default_table_name() {
