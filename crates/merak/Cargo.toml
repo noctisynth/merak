@@ -1,6 +1,6 @@
 [package]
 name = "merak"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 edition = "2024"
 publish = false
 
@@ -12,8 +12,8 @@ axum-extra = { version = "0.12.5", features = ["typed-header"] }
 chrono = { version = "0.4", features = ["serde"] }
 dotenv = "0.15.0"
 jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
-merak-core = { path = "../core", version = "0.1.0-alpha.0" }
-merak-macros = { path = "../macros", version = "0.1.0-alpha.0" }
+merak-core = { path = "../core", version = "0.1.0-alpha.1" }
+merak-macros = { path = "../macros", version = "0.1.0-alpha.1" }
 rand = "0.9"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
