@@ -1,6 +1,10 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
+import { z } from 'zod';
 import { login } from '@/client';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,28 +17,44 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const loginSchema = z.object({
+  identifier: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 export default function Login() {
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [serverError, setServerError] = useState('');
 
-  const handleSubmit = async () => {
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      identifier: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (data: LoginFormValues) => {
     try {
       setLoading(true);
-      setError('');
+      setServerError('');
 
       await login({
         body: {
-          identifier,
-          password,
+          identifier: data.identifier,
+          password: data.password,
         },
       });
 
-      navigate('/register');
+      navigate('/');
     } catch {
-      setError('Invalid email or password');
+      setServerError('Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -59,56 +79,77 @@ export default function Login() {
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="login-email"
-                className="text-sm font-medium text-foreground"
-              >
-                Email
-              </Label>
-              <Input
-                id="login-email"
-                className="bg-background"
-                placeholder="m@example.com"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-              />
-            </div>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Email */}
+            <Controller
+              name="identifier"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="login-email"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Email
+                  </Label>
+                  <Input
+                    {...field}
+                    id="login-email"
+                    className="bg-background"
+                    placeholder="m@example.com"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="login-password"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Password
-                </Label>
-                <span className="text-sm text-muted-foreground cursor-pointer">
-                  Forgot your password?
-                </span>
-              </div>
-              <Input
-                id="login-password"
-                type="password"
-                className="bg-background"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+            {/* Password */}
+            <Controller
+              name="password"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor="login-password"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Password
+                    </Label>
+                    <span className="text-sm text-muted-foreground cursor-pointer">
+                      Forgot your password?
+                    </span>
+                  </div>
+                  <Input
+                    {...field}
+                    id="login-password"
+                    type="password"
+                    className="bg-background"
+                    placeholder="••••••••"
+                    aria-invalid={fieldState.invalid}
+                  />
+                  {fieldState.invalid && (
+                    <p className="text-sm text-destructive">
+                      {fieldState.error?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {serverError && (
+              <p className="text-sm text-destructive">{serverError}</p>
+            )}
 
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading ? 'Logging in...' : 'Login'}
             </Button>
-          </div>
+          </form>
         </CardContent>
       </Card>
     </div>
