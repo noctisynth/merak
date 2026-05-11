@@ -6,6 +6,7 @@ import './i18n';
 import './index.css';
 
 import Landing from './pages';
+import Dashboard from './pages/dashboard';
 import Login from './pages/login';
 import Register from './pages/register';
 
@@ -21,6 +22,10 @@ const router = createBrowserRouter([
   {
     path: '/register',
     element: <Register />,
+  },
+  {
+    path: '/dashboard',
+    element: <Dashboard />,
   },
 ]);
 
