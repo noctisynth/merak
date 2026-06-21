@@ -4,14 +4,69 @@ export type ClientOptions = {
   baseURL: 'http://localhost:8080' | (string & {});
 };
 
-/**
- * Error response
- */
-export type ErrorResponse = {
-  /**
-   * Error message
-   */
+export type ApiResponseEmptyData = {
+  code: BusinessCode;
+  data: EmptyData;
   message: string;
+  timestamp: number;
+};
+
+export type ApiResponseHelloResponse = {
+  code: BusinessCode;
+  data: HelloResponse;
+  message: string;
+  timestamp: number;
+};
+
+export type ApiResponseLoginResponse = {
+  code: BusinessCode;
+  data: LoginResponse;
+  message: string;
+  timestamp: number;
+};
+
+export type ApiResponseRefreshTokenResponse = {
+  code: BusinessCode;
+  data: RefreshTokenResponse;
+  message: string;
+  timestamp: number;
+};
+
+export type ApiResponseRegisterResponse = {
+  code: BusinessCode;
+  data: RegisterResponse;
+  message: string;
+  timestamp: number;
+};
+
+export type ApiResponseUserResponse = {
+  code: BusinessCode;
+  data: UserResponse;
+  message: string;
+  timestamp: number;
+};
+
+export type BusinessCode = number;
+
+export type BusinessCodes =
+  | 19901
+  | 10101
+  | 10102
+  | 10103
+  | 10104
+  | 10105
+  | 10106
+  | 10107
+  | 10108;
+
+export type EmptyData = {
+  [key: string]: unknown;
+};
+
+export type ErrorResponse = {
+  code: BusinessCode;
+  message: string;
+  timestamp: number;
 };
 
 export type HelloResponse = {
@@ -143,9 +198,13 @@ export type LoginData = {
 
 export type LoginErrors = {
   /**
-   * Invalid username or password
+   * Invalid credentials
    */
-  401: ErrorResponse;
+  401: {
+    code: BusinessCode;
+    message: string;
+    timestamp: number;
+  };
   /**
    * Internal server error
    */
@@ -158,7 +217,7 @@ export type LoginResponses = {
   /**
    * Login successful
    */
-  200: LoginResponse;
+  200: ApiResponseLoginResponse;
 };
 
 export type LoginResponse2 = LoginResponses[keyof LoginResponses];
@@ -172,6 +231,14 @@ export type LogoutData = {
 
 export type LogoutErrors = {
   /**
+   * Unauthorized
+   */
+  401: {
+    code: BusinessCode;
+    message: string;
+    timestamp: number;
+  };
+  /**
    * Internal server error
    */
   500: ErrorResponse;
@@ -183,7 +250,7 @@ export type LogoutResponses = {
   /**
    * Logout successful
    */
-  200: ErrorResponse;
+  200: ApiResponseEmptyData;
 };
 
 export type LogoutResponse = LogoutResponses[keyof LogoutResponses];
@@ -199,11 +266,19 @@ export type GetMeErrors = {
   /**
    * Unauthorized
    */
-  401: ErrorResponse;
+  401: {
+    code: BusinessCode;
+    message: string;
+    timestamp: number;
+  };
   /**
    * User not found
    */
-  404: ErrorResponse;
+  404: {
+    code: BusinessCode;
+    message: string;
+    timestamp: number;
+  };
   /**
    * Internal server error
    */
@@ -216,7 +291,7 @@ export type GetMeResponses = {
   /**
    * Successfully retrieved user information
    */
-  200: UserResponse;
+  200: ApiResponseUserResponse;
 };
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
@@ -230,9 +305,13 @@ export type RefreshTokenData = {
 
 export type RefreshTokenErrors = {
   /**
-   * Refresh token invalid or expired
+   * Token invalid or expired
    */
-  401: ErrorResponse;
+  401: {
+    code: BusinessCode;
+    message: string;
+    timestamp: number;
+  };
   /**
    * Internal server error
    */
@@ -245,7 +324,7 @@ export type RefreshTokenResponses = {
   /**
    * Token refresh successful
    */
-  200: RefreshTokenResponse;
+  200: ApiResponseRefreshTokenResponse;
 };
 
 export type RefreshTokenResponse2 =
@@ -260,13 +339,21 @@ export type RegisterData = {
 
 export type RegisterErrors = {
   /**
-   * Invalid request parameters
+   * Weak password
    */
-  400: ErrorResponse;
+  400: {
+    code: BusinessCode;
+    message: string;
+    timestamp: number;
+  };
   /**
    * Username or email already exists
    */
-  409: ErrorResponse;
+  409: {
+    code: BusinessCode;
+    message: string;
+    timestamp: number;
+  };
   /**
    * Internal server error
    */
@@ -279,7 +366,7 @@ export type RegisterResponses = {
   /**
    * Registration successful
    */
-  201: RegisterResponse;
+  201: ApiResponseRegisterResponse;
 };
 
 export type RegisterResponse2 = RegisterResponses[keyof RegisterResponses];
@@ -295,23 +382,7 @@ export type HelloResponses = {
   /**
    * Successful response
    */
-  200: HelloResponse;
+  200: ApiResponseHelloResponse;
 };
 
 export type HelloResponse2 = HelloResponses[keyof HelloResponses];
-
-export type Hello2Data = {
-  body?: never;
-  path?: never;
-  query?: never;
-  url: '/hello';
-};
-
-export type Hello2Responses = {
-  /**
-   * Successful response
-   */
-  200: HelloResponse;
-};
-
-export type Hello2Response = Hello2Responses[keyof Hello2Responses];

@@ -11,6 +11,7 @@ axum = "0.8.8"
 axum-extra = { version = "0.12.5", features = ["typed-header"] }
 chrono = { version = "0.4", features = ["serde"] }
 dotenv = "0.15.0"
+inventory = "0.3.21"
 jsonwebtoken = { version = "10.2.0", features = ["aws_lc_rs"] }
 merak-core = { path = "../core", version = "0.1.0-alpha.0" }
 merak-macros = { path = "../macros", version = "0.1.0-alpha.0" }

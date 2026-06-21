@@ -9,7 +9,8 @@ use utoipa::{OpenApi, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_redoc::{Redoc, Servable};
 
-use merak::common::code;
+use merak::BusinessCodes;
+use merak::common::code::{CommonCode, register_all_codes};
 use merak::common::response::{ApiResponse, ErrorResponse};
 use merak::routes::auth;
 use merak::services::auth::AuthService;
@@ -30,14 +31,15 @@ async fn hello() -> axum::Json<ApiResponse<HelloResponse>> {
 
 async fn not_found() -> (StatusCode, axum::Json<ErrorResponse>) {
     (
-        StatusCode::OK,
-        axum::Json(ErrorResponse::new(code::common::NOT_FOUND, "Not Found")),
+        StatusCode::NOT_FOUND,
+        axum::Json(ErrorResponse::new(CommonCode::NotFound, "Not Found")),
     )
 }
 
 #[derive(OpenApi)]
 #[openapi(
     paths(hello),
+    components(schemas(BusinessCodes)),
     tags(
         (name = "Authentication", description = "Authentication endpoints"),
     ),
@@ -79,12 +81,14 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Build openapi + base router
-    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+    let (router, mut api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .routes(routes!(hello))
         .with_state(state)
         .nest("/auth", auth::routes().with_state(auth_state))
         .fallback(not_found)
         .split_for_parts();
+
+    register_all_codes(&mut api);
 
     // Redoc UI
     let router = router
